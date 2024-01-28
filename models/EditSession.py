@@ -15,6 +15,8 @@ class EditSession(Base):
     Edit_finish = Column(DateTime)
     Editposition = Column(Integer)
     session_status = Column(String(10))
+    
+    # 1:N 관계 설정
     user = relationship("User")
     audio_file = relationship("AudioFile")
     effect_sound = relationship("EffectSound")

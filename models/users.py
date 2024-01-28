@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, func
 from sqlalchemy.orm import relationship
 from config.database import Base
 from pydantic import BaseModel
@@ -10,7 +10,7 @@ class User(Base):
     user_id = Column(Integer, primary_key=True)
     login_id = Column(String(20))
     login_pw = Column(String(20))
-    created_at = Column(DateTime)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 

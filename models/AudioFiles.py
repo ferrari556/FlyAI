@@ -15,4 +15,6 @@ class AudioFile(Base):
     FileType = Column(String(30))
     Complete_Date = Column(DateTime)
     File_Status = Column(String(10))
+    
+    # 1:N 관계 설정
     user = relationship("User")

@@ -11,4 +11,6 @@ class STTData(Base):
     audio_id = Column(Integer, ForeignKey('audioFiles.audio_id'))
     Converted_text = Column(Text)
     Complete_Convert_Date = Column(DateTime)
+    
+    # 1:N 관계 설정
     audio_file = relationship("AudioFile")

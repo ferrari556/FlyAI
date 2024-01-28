@@ -13,6 +13,8 @@ class UserEdit(Base):
     effect_id = Column(Integer, ForeignKey('Effectsounds.effect_id'))
     text_position = Column(Integer)
     effect_status = Column(String(10))
+    
+    # 1:N 관계 설정
     user = relationship("User")
     audio_file = relationship("AudioFile")
     effect_sound = relationship("EffectSound")

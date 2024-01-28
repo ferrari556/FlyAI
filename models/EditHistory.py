@@ -12,5 +12,7 @@ class EditHistory(Base):
     user_id = Column(Integer, ForeignKey('users.user_id'))
     ChangeContent = Column(Text)
     ChangeTime = Column(DateTime)
+    
+    # 1:N 관계 설정
     edit_session = relationship("EditSession")
     user = relationship("User")

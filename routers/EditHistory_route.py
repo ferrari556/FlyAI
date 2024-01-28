@@ -1,24 +1,17 @@
 from sqlalchemy.orm import Session
 from models.EditHistory import EditHistory
+from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException
-from schemas.schemas import EditHistory
+from schemas.schemas import edithistory
 from fastapi.responses import JSONResponse
 from config.database import get_db
 
 router = APIRouter()
 
-@router.get("/edithistory", tags=["EditHistory"])
-async def get_all_edithistory(db: Session = Depends(get_db)):
-    try:
-        edithistory = db.query(EditHistory).all()
-        return edithistory
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
-
 @router.get("/edithistory/{history_id}", tags=["EditHistory"])
-async def get_edithistory_by_id(history_id: int, db: Session = Depends(get_db)):
+async def get_edithistory_by_id(history_id: int, db: AsyncSession = Depends(get_db)):
     try:
-        history = db.query(EditHistory).filter(EditHistory.history_id == history_id).first()
+        history = await db.get(EditHistory, history_id)
         if history is None:
             raise HTTPException(status_code=404, detail="EditHistory not found")
         return history
@@ -26,51 +19,57 @@ async def get_edithistory_by_id(history_id: int, db: Session = Depends(get_db)):
         return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
 
 @router.post("/edithistory", tags=["EditHistory"])
-async def create_edithistory(edithistory: EditHistory, db: Session = Depends(get_db)):
+async def create_edithistory(edithistory: edithistory, db: AsyncSession = Depends(get_db)):
     try:
         new_history = EditHistory(
-            # 스키마에 맞게 필드 할당
+            session_id=edithistory.session_id,
+            user_id=edithistory.user_id,
+            ChangeContent=edithistory.ChangeContent,
+            ChangeTime=edithistory.ChangeTime
         )
         db.add(new_history)
-        db.commit()
-        db.refresh(new_history)
+        await db.commit()
+        await db.refresh(new_history)
         return new_history
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
     finally:
-        db.close()
+        await db.close()
 
 @router.put("/edithistory/{history_id}", tags=["EditHistory"])
-async def update_edithistory(history_id: int, edithistory: EditHistory, db: Session = Depends(get_db)):
+async def update_edithistory(history_id: int, edithistory: edithistory, db: AsyncSession = Depends(get_db)):
     try:
-        existing_history = db.query(EditHistory).filter(EditHistory.history_id == history_id).first()
+        existing_history = await db.get(EditHistory, history_id)
         if existing_history is None:
             raise HTTPException(status_code=404, detail="EditHistory not found")
+        
+        existing_history.session_id = edithistory.session_id
+        existing_history.user_id = edithistory.user_id
+        existing_history.ChangeContent = edithistory.ChangeContent
+        existing_history.ChangeTime = edithistory.ChangeTime
 
-        # 스키마에 맞게 필드 업데이트
-
-        db.commit()
-        db.refresh(existing_history)
+        await db.commit()
+        await db.refresh(existing_history)
         return existing_history
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
     finally:
-        db.close()
+        await db.close()
 
 @router.delete("/edithistory/{history_id}", tags=["EditHistory"])
-async def delete_edithistory(history_id: int, db: Session = Depends(get_db)):
+async def delete_edithistory(history_id: int, db: AsyncSession = Depends(get_db)):
     try:
-        existing_history = db.query(EditHistory).filter(EditHistory.history_id == history_id).first()
+        existing_history = await db.get(EditHistory, history_id)
         if existing_history is None:
             raise HTTPException(status_code=404, detail="EditHistory not found")
 
-        db.delete(existing_history)
-        db.commit()
+        await db.delete(existing_history)
+        await db.commit()
         return {"message": "EditHistory deleted"}
     except Exception as e:
-        db.rollback()
+        await db.rollback()
         return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
     finally:
-        db.close()
+        await db.close()
