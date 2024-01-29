@@ -9,7 +9,7 @@ class EditHistory(Base):
     __tablename__ = 'EditHistory'
     history_id = Column(Integer, primary_key=True)
     session_id = Column(Integer, ForeignKey('EditSession.session_id'))
-    user_id = Column(Integer, ForeignKey('users.user_id'))
+    user_id = Column(Integer, ForeignKey('user.user_id'))
     ChangeContent = Column(Text)
     ChangeTime = Column(DateTime)
     

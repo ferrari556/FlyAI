@@ -6,9 +6,9 @@ from typing import Optional, List
 from datetime import datetime
 
 class AudioFile(Base):
-    __tablename__ = 'audioFiles'
+    __tablename__ = 'audioFile'
     audio_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.user_id'))
+    user_id = Column(Integer, ForeignKey('user.user_id'))
     audio_name = Column(String(50))
     FilePath = Column(String(100))
     File_Length = Column(Float)

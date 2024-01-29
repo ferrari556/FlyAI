@@ -6,7 +6,7 @@ from typing import Optional, List
 from datetime import datetime
 
 class User(Base):
-    __tablename__ = 'users'
+    __tablename__ = 'user'
     user_id = Column(Integer, primary_key=True)
     login_id = Column(String(20))
     login_pw = Column(String(20))

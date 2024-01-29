@@ -6,7 +6,7 @@ from typing import Optional, List
 from datetime import datetime
 
 class EffectSound(Base):
-    __tablename__ = 'Effectsounds'
+    __tablename__ = 'Effectsound'
     effect_id = Column(Integer, primary_key=True)
     effect_name = Column(String(50))
     Effect_Path = Column(String(100))

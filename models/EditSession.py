@@ -8,9 +8,9 @@ from datetime import datetime
 class EditSession(Base):
     __tablename__ = 'EditSession'
     session_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.user_id'))
-    audio_id = Column(Integer, ForeignKey('audioFiles.audio_id'))
-    effect_id = Column(Integer, ForeignKey('Effectsounds.effect_id'))
+    user_id = Column(Integer, ForeignKey('user.user_id'))
+    audio_id = Column(Integer, ForeignKey('audioFile.audio_id'))
+    effect_id = Column(Integer, ForeignKey('Effectsound.effect_id'))
     Edit_start = Column(DateTime)
     Edit_finish = Column(DateTime)
     Editposition = Column(Integer)

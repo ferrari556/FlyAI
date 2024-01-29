@@ -6,11 +6,11 @@ from typing import Optional, List
 from datetime import datetime
 
 class UserEdit(Base):
-    __tablename__ = 'UserEdits'
+    __tablename__ = 'UserEdit'
     user_edit_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('users.user_id'))
-    audio_id = Column(Integer, ForeignKey('audioFiles.audio_id'))
-    effect_id = Column(Integer, ForeignKey('Effectsounds.effect_id'))
+    user_id = Column(Integer, ForeignKey('user.user_id'))
+    audio_id = Column(Integer, ForeignKey('audioFile.audio_id'))
+    effect_id = Column(Integer, ForeignKey('Effectsound.effect_id'))
     text_position = Column(Integer)
     effect_status = Column(String(10))
     
