@@ -43,6 +43,7 @@ UserSoundEffects.metadata.create_all(bind=engine)
 users.metadata.create_all(bind=engine)
 
 # Prefix는 엔드포인트를 정할 때 사용
+app.include_router(users_route.router, prefix="", tags=["Users"])
 app.include_router(AudioFiles_route.router, prefix="", tags=["AudioFiles"])
 app.include_router(EditHistory_route.router, prefix="", tags=["EditHistory"])
 app.include_router(EditSession_route.router, prefix="", tags=["EditSession"])
@@ -50,7 +51,6 @@ app.include_router(Effectsounds_route.router, prefix="", tags=["Effectsounds"])
 app.include_router(STTdata_route.router, prefix="", tags=["STTdata"])
 app.include_router(UserEdits_route.router, prefix="", tags=["UserEdits"])
 app.include_router(UserSoundEffects_route.router, prefix="", tags=["UserSoundEffects"])
-app.include_router(users_route.router, prefix="", tags=["Users"])
 
 @app.get('/')
 def home():
