@@ -8,9 +8,6 @@ from sqlalchemy.future import select
 from services.login_service import oauth2_scheme
 
 router = APIRouter()
-# @router.post("/uploadfile", tags=["UploadFile"])
-# async def create_upload_file(request: Request, file: UploadFile, db: AsyncSession = Depends(get_db)):
-    # login_id = await get_current_user_authorization(request)
 @router.post("/uploadfile", tags=["UploadFile"])
 async def create_upload_file(request: Request, file: UploadFile, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     login_id = await get_current_user_authorization(request, token)
