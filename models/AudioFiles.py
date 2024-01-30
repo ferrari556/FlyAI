@@ -2,7 +2,6 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Tex
 from sqlalchemy.orm import relationship
 from config.database import Base
 from pydantic import BaseModel
-from typing import Optional, List
 from datetime import datetime
 
 class AudioFile(Base):
@@ -18,3 +17,14 @@ class AudioFile(Base):
     
     # 1:N 관계 설정
     user = relationship("User")
+
+class AudioResponse(BaseModel):
+    audio_id : int
+    audio_name : str
+    FileType : str
+    Complete_Data : datetime
+    File_Status : str
+    
+class AudioDownload(BaseModel):
+    audio_name : str
+    Filepath : str

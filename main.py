@@ -19,7 +19,8 @@ from routers import (
     STTdata_route,
     UserEdits_route,
     UserSoundEffects_route,
-    users_route
+    users_route,
+    upload_route
 )
 
 # 초기 데이터베이스 연결
@@ -44,6 +45,7 @@ users.metadata.create_all(bind=engine)
 
 # Prefix는 엔드포인트를 정할 때 사용
 app.include_router(users_route.router, prefix="", tags=["Users"])
+app.include_router(upload_route.router, prefix="", tags=["UploadFile"])
 app.include_router(AudioFiles_route.router, prefix="", tags=["AudioFiles"])
 app.include_router(EditHistory_route.router, prefix="", tags=["EditHistory"])
 app.include_router(EditSession_route.router, prefix="", tags=["EditSession"])

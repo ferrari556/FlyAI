@@ -1,11 +1,11 @@
-from sqlalchemy.orm import Session
 from models.users import User, Usercreate, UserResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException
-from schemas.schemas import users
 from fastapi.responses import JSONResponse
 from config.database import get_db
+from fastapi.security import OAuth2PasswordRequestForm
 from services import login_service
+from services.login_service import oauth2_scheme
 
 router = APIRouter()
 
@@ -22,6 +22,10 @@ async def get_user_by_id(user_id: int, db: AsyncSession = Depends(get_db)):
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
 
+@router.get("/auth/")
+async def read_items(token: str = Depends(oauth2_scheme)):
+    return {"token": token}
+
 # 사용자 생성
 @router.post("/signup", tags=["Users"], response_model = UserResponse)
 async def signup(user: Usercreate, db: AsyncSession = Depends(get_db)):
@@ -37,43 +41,23 @@ async def signup(user: Usercreate, db: AsyncSession = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+@router.post("/login")
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+    db_user = await login_service.authenticate_user(db, form_data.username, form_data.password)
+    if not db_user:
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
 
-# # 사용자 업데이트
-# @router.put("/users/{user_id}", tags=["Users"])
-# async def update_user(user_id: int, user: users, db: AsyncSession = Depends(get_db)):
+    access_token = login_service.create_access_token({"sub": db_user.login_id})
+    return {"access_token": access_token, "token_type": "bearer"}
+
+# @router.post("/login")
+# async def login(user: Usercreate, db: AsyncSession = Depends(get_db)):
 #     try:
-#         existing_user = await db.get(User, user_id)
-#         if existing_user is None:
-#             raise HTTPException(status_code=404, detail="User not found")
-        
-#         existing_user.login_id = user.login_id
-#         existing_user.login_pw = user.login_pw
-#         existing_user.created_at = user.created_at
-
-#         await db.commit()
-#         await db.refresh(existing_user)
-#         return existing_user
+#         db_user = await login_service.authenticate_user(db, user.login_id, user.login_pw)
 #     except Exception as e:
-#         await db.rollback()
-#         return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
-#     finally:
-#         await db.close()
+#         raise HTTPException(status_code=401, detail=str(e))
 
-# # 사용자 삭제
-# @router.delete("/users/{user_id}", tags=["Users"])
-# async def delete_user(user_id: int, db: AsyncSession = Depends(get_db)):
-#     try:
-#         existing_user = await db.get(User, user_id)
-#         if existing_user is None:
-#             raise HTTPException(status_code=404, detail="User not found")
-        
-#         await db.delete(existing_user)
-#         await db.commit()
+#     access_token = login_service.create_access_token({"sub": db_user.login_id})
+#     return {"login_id": db_user.login_id, "access_token": access_token}
 
-#         return {"message": "User deleted"}
-#     except Exception as e:
-#         await db.rollback()
-#         return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
-#     finally:
-#         await db.close()
     
