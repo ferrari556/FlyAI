@@ -29,7 +29,7 @@ async def uploadtoazure(file_name: str, content_type: str, file_data, user_id: i
         file_length = audio.info.length  # 재생 시간 (초 단위)
 
         # Azure에 파일 업로드
-        connect_str = "DefaultEndpointsProtocol=https;AccountName=ferrari556;AccountKey=g8BUEJyJPPinwIYo7QPyAZql3SHflcOXQHFfBSqWijNdor0uC3+2MFslBA16+AnoVvrT1G93xUQe+AStXt7N4g==;EndpointSuffix=core.windows.net"
+        connect_str = ""
         blob_service_client = BlobServiceClient.from_connection_string(connect_str)
         container_name = "test"
         blob_client = blob_service_client.get_container_client(container_name).get_blob_client(file_name)
