@@ -8,7 +8,7 @@ class AudioFile(Base):
     __tablename__ = 'audioFile'
     audio_id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('user.user_id'))
-    audio_name = Column(String(50))
+    audio_name = Column(String(255))
     FilePath = Column(String(100))
     File_Length = Column(Float)
     FileType = Column(String(30))
