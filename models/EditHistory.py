@@ -10,8 +10,8 @@ class EditHistory(Base):
     history_id = Column(Integer, primary_key=True)
     session_id = Column(Integer, ForeignKey('EditSession.session_id'))
     user_id = Column(Integer, ForeignKey('user.user_id'))
-    ChangeContent = Column(Text)
-    ChangeTime = Column(DateTime)
+    EditContent = Column(Text)
+    EditDate = Column(DateTime)
     
     # 1:N 관계 설정
     edit_session = relationship("EditSession")

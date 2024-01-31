@@ -10,7 +10,7 @@ class STTData(Base):
     text_id = Column(Integer, primary_key=True)
     audio_id = Column(Integer, ForeignKey('audioFile.audio_id'))
     Converted_text = Column(Text)
-    Complete_Convert_Date = Column(DateTime)
+    Converted_date = Column(DateTime)
     
     # 1:N 관계 설정
     audio_file = relationship("AudioFile")

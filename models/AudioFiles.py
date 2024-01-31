@@ -8,12 +8,12 @@ class AudioFile(Base):
     __tablename__ = 'audioFile'
     audio_id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('user.user_id'))
-    audio_name = Column(String(255))
-    FilePath = Column(String(100))
+    file_name = Column(String(255))
+    FilePath = Column(String(255))
     File_Length = Column(Float)
-    FileType = Column(String(30))
-    Complete_Date = Column(DateTime)
-    File_Status = Column(String(10))
+    FileType = Column(String(50))
+    Upload_Date = Column(DateTime)
+    File_Status = Column(String(50))
     
     # 1:N 관계 설정
     user = relationship("User")

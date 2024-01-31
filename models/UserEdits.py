@@ -12,8 +12,8 @@ class UserEdit(Base):
     audio_id = Column(Integer, ForeignKey('audioFile.audio_id'))
     effect_id = Column(Integer, ForeignKey('Effectsound.effect_id'))
     text_position = Column(Integer)
-    effect_status = Column(String(10))
-    
+    effect_status = Column(String(50))
+    session_status = Column(String(50))
     # 1:N 관계 설정
     user = relationship("User")
     audio_file = relationship("AudioFile")

@@ -8,7 +8,7 @@ from datetime import datetime
 class EffectSound(Base):
     __tablename__ = 'Effectsound'
     effect_id = Column(Integer, primary_key=True)
-    effect_name = Column(String(50))
-    Effect_Path = Column(String(100))
-    Effect_Length = Column(Float)
-    Effect_number = Column(Integer)
+    effect_name = Column(String(255))
+    effect_path = Column(String(255))
+    effect_length = Column(Float)
+    effect_index = Column(Integer)

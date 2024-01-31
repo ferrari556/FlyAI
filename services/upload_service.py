@@ -8,13 +8,12 @@ import os
 
 # 파일 이름으로 오디오 파일 검색
 async def get_audiofile_by_name(db: AsyncSession, file_name: str):
-    result = await db.execute(select(AudioFile).filter_by(audio_name=file_name))
+    result = await db.execute(select(AudioFile).filter_by(file_name=file_name))
     return result.scalar_one_or_none()
 
 async def uploadtoazure(file_name: str, content_type: str, file_data, user_id: int, db: AsyncSession):
     # 파일 이름으로 기존 오디오 파일 존재 여부 확인
     existing_audiofile = await get_audiofile_by_name(db, file_name)
-    
     if existing_audiofile:
         raise ValueError("File Name Already Used")
 
@@ -23,16 +22,20 @@ async def uploadtoazure(file_name: str, content_type: str, file_data, user_id: i
     with open(temp_file_path, 'wb') as temp_file:
         temp_file.write(file_data)
 
+    # Azure 연결 문자열과 컨테이너 이름
+    connect_str = "DefaultEndpointsProtocol=https;AccountName=ferrari556;AccountKey=g8BUEJyJPPinwIYo7QPyAZql3SHflcOXQHFfBSqWijNdor0uC3+2MFslBA16+AnoVvrT1G93xUQe+AStXt7N4g==;EndpointSuffix=core.windows.net"
+    container_name = "test"
+
+    # Blob 클라이언트 생성
+    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+    blob_client = blob_service_client.get_container_client(container_name).get_blob_client(file_name)
+
     try:
         # MP3 파일의 재생 시간 계산
         audio = MP3(temp_file_path)
         file_length = audio.info.length  # 재생 시간 (초 단위)
 
         # Azure에 파일 업로드
-        connect_str = "DefaultEndpointsProtocol=https;AccountName=ferrari556;AccountKey=g8BUEJyJPPinwIYo7QPyAZql3SHflcOXQHFfBSqWijNdor0uC3+2MFslBA16+AnoVvrT1G93xUQe+AStXt7N4g==;EndpointSuffix=core.windows.net"
-        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-        container_name = "test"
-        blob_client = blob_service_client.get_container_client(container_name).get_blob_client(file_name)
         blob_client.upload_blob(file_data)
 
         # 데이터베이스 업데이트
@@ -41,16 +44,20 @@ async def uploadtoazure(file_name: str, content_type: str, file_data, user_id: i
 
         audio_file = AudioFile(
             user_id=user_id,
-            audio_name=file_name,
+            file_name=file_name,
             FilePath=f"{container_name}/{file_name}",
-            File_Length=file_length,  # 실제 파일 길이로 설정
+            File_Length=file_length,
             FileType=content_type,
-            Complete_Date=created_at_kst,
+            Upload_Date=created_at_kst,
             File_Status="Uploaded"
         )
 
         db.add(audio_file)
         await db.commit()
+    except Exception as e:
+        # 파일 업로드 중 에러 발생 시 Blob에서 파일 삭제
+        await blob_client.delete_blob()
+        raise e
     finally:
         # 임시 파일 삭제
         if os.path.exists(temp_file_path):

@@ -11,10 +11,9 @@ class EditSession(Base):
     user_id = Column(Integer, ForeignKey('user.user_id'))
     audio_id = Column(Integer, ForeignKey('audioFile.audio_id'))
     effect_id = Column(Integer, ForeignKey('Effectsound.effect_id'))
-    Edit_start = Column(DateTime)
-    Edit_finish = Column(DateTime)
-    Editposition = Column(Integer)
-    session_status = Column(String(10))
+    start_edit = Column(DateTime)
+    end_edit = Column(DateTime)
+    LastEditPoint = Column(Integer)
     
     # 1:N 관계 설정
     user = relationship("User")
