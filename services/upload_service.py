@@ -1,11 +1,15 @@
+from fastapi import HTTPException
 from azure.storage.blob import BlobServiceClient
-from azure.core.exceptions import ResourceExistsError
+from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from models.AudioFiles import AudioFile
 from sqlalchemy.ext.asyncio import AsyncSession
 import pytz, datetime
 from sqlalchemy.future import select
 from mutagen.mp3 import MP3
 import os
+import mimetypes
+
+connect_str = ""
 
 # 파일 이름으로 오디오 파일 검색
 async def get_audiofile_by_name(db: AsyncSession, file_name: str):
@@ -24,9 +28,7 @@ async def uploadtoazure(file_name: str, content_type: str, file_data, user_id: i
         temp_file.write(file_data)
 
     # Azure 연결 문자열 설정
-    connect_str = "DefaultEndpointsProtocol=https;AccountName=ferrari556;AccountKey=g8BUEJyJPPinwIYo7QPyAZql3SHflcOXQHFfBSqWijNdor0uC3+2MFslBA16+AnoVvrT1G93xUQe+AStXt7N4g==;EndpointSuffix=core.windows.net"
     container_name = f"test{user_id}"
-
     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
     blob_client = None
     
@@ -76,3 +78,49 @@ async def uploadtoazure(file_name: str, content_type: str, file_data, user_id: i
             os.remove(temp_file_path)
 
     return audio_file
+
+# Azure에서 파일 다운로드 및 AudioFiles 데이터베이스에 저장
+async def downloadfromazure(user_id: int, file_name: str, db: AsyncSession):
+    container_name = f"test{user_id}"
+    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
+    blob_client = blob_service_client.get_blob_client(container=container_name, blob=file_name)
+    temp_file_path = f"./tmp/{file_name}"
+    
+    try:
+        # Blob에서 파일 다운로드 시도
+        with open(temp_file_path, "wb") as file:
+            download_stream = blob_client.download_blob()
+            file.write(download_stream.readall())
+            
+    except ResourceNotFoundError:
+        # Blob Storage에 파일이 없는 경우 예외 처리
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+        raise HTTPException(status_code=404, detail="Blob not found")
+
+    # 파일이 성공적으로 다운로드 된 경우, 파일 정보 추출 및 저장
+    try:
+        audio = MP3(temp_file_path)
+        file_length = audio.info.length
+        content_type, _ = mimetypes.guess_type(file_name)
+
+        korea_time_zone = pytz.timezone("Asia/Seoul")
+        created_at_kst = datetime.datetime.now(korea_time_zone)
+
+        audio_file = AudioFile(
+            user_id=user_id,
+            file_name=file_name,
+            FilePath=blob_client.url,
+            File_Length=file_length,
+            FileType=content_type,
+            Upload_Date=created_at_kst,
+            File_Status="Downloaded"
+        )
+
+        db.add(audio_file)
+        await db.commit()
+        await db.refresh(audio_file)
+        return audio_file
+    except Exception as e:
+        # 다른 예외 발생 시 처리
+        raise HTTPException(status_code=500, detail=str(e))

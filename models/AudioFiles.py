@@ -22,7 +22,7 @@ class AudioResponse(BaseModel):
     audio_id : int
     audio_name : str
     FileType : str
-    Complete_Data : datetime
+    Upload_Date : datetime
     File_Status : str
     
 class AudioDownload(BaseModel):
