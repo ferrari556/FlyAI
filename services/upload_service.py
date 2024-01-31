@@ -1,4 +1,5 @@
 from azure.storage.blob import BlobServiceClient
+from azure.core.exceptions import ResourceExistsError
 from models.AudioFiles import AudioFile
 from sqlalchemy.ext.asyncio import AsyncSession
 import pytz, datetime
@@ -22,26 +23,33 @@ async def uploadtoazure(file_name: str, content_type: str, file_data, user_id: i
     with open(temp_file_path, 'wb') as temp_file:
         temp_file.write(file_data)
 
-    # Azure 연결 문자열과 컨테이너 이름
+    # Azure 연결 문자열 설정
     connect_str = "DefaultEndpointsProtocol=https;AccountName=ferrari556;AccountKey=g8BUEJyJPPinwIYo7QPyAZql3SHflcOXQHFfBSqWijNdor0uC3+2MFslBA16+AnoVvrT1G93xUQe+AStXt7N4g==;EndpointSuffix=core.windows.net"
-    container_name = "test"
+    container_name = f"test{user_id}"
 
-    # Blob 클라이언트 생성
     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-    blob_client = blob_service_client.get_container_client(container_name).get_blob_client(file_name)
-
+    blob_client = None
+    
     try:
         # MP3 파일의 재생 시간 계산
         audio = MP3(temp_file_path)
         file_length = audio.info.length  # 재생 시간 (초 단위)
-
-        # Azure에 파일 업로드
-        connect_str = "DefaultEndpointsProtocol=https;AccountName=ferrari556;AccountKey=g8BUEJyJPPinwIYo7QPyAZql3SHflcOXQHFfBSqWijNdor0uC3+2MFslBA16+AnoVvrT1G93xUQe+AStXt7N4g==;EndpointSuffix=core.windows.net"
-        blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-        container_name = "test"
+        
+        # 컨테이너 생성 (존재하지 않는 경우에만)
+        try:
+            blob_service_client.create_container(container_name)
+        except ResourceExistsError:
+            pass
+        
+        # blob client 생성
         blob_client = blob_service_client.get_container_client(container_name).get_blob_client(file_name)
+        
+        # blob에 file upload
         blob_client.upload_blob(file_data)
 
+        # Blob의 URL을 얻습니다.
+        blob_url = blob_client.url
+        
         # 데이터베이스 업데이트
         korea_time_zone = pytz.timezone("Asia/Seoul")
         created_at_kst = datetime.datetime.now(korea_time_zone)
@@ -49,7 +57,7 @@ async def uploadtoazure(file_name: str, content_type: str, file_data, user_id: i
         audio_file = AudioFile(
             user_id=user_id,
             file_name=file_name,
-            FilePath=f"{container_name}/{file_name}",
+            FilePath=blob_url,
             File_Length=file_length,
             FileType=content_type,
             Upload_Date=created_at_kst,
