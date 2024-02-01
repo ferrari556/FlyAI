@@ -20,18 +20,18 @@ class AudioFile(Base):
 
 class AudioResponse(BaseModel):
     audio_id : int
-    audio_name : str
+    file_name : str
     FileType : str
     Upload_Date : datetime
     File_Status : str
     
 class AudioDelete(BaseModel):
-    audio_name : str
+    file_name : str
     FileType : str
     Upload_Date : datetime
 
 class AudioRead(BaseModel):
-    audio_name : str
+    file_name : str
     FileType : str
     Upload_Date : datetime
     File_Status : str

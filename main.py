@@ -33,7 +33,7 @@ app = FastAPI()
 
 # API 암호화
 setup_cors(app)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # 원하는 데이터베이스 생성
 AudioFiles.metadata.create_all(bind=engine)
@@ -54,7 +54,7 @@ app.include_router(Effectsounds_route.router, prefix="", tags=["Effectsounds"])
 app.include_router(UserEdits_route.router, prefix="", tags=["UserEdits"])
 app.include_router(EditHistory_route.router, prefix="", tags=["EditHistory"])
 app.include_router(EditSession_route.router, prefix="", tags=["EditSession"])
-app.include_router(UserSoundEffects_route.router, prefix="", tags=["UserSoundEffects"])
+# app.include_router(UserSoundEffects_route.router, prefix="", tags=["UserSoundEffects"])
 
 @app.get('/')
 def home():

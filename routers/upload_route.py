@@ -8,6 +8,7 @@ from models.AudioFiles import AudioResponse
 from sqlalchemy.future import select
 from services.login_service import oauth2_scheme
 
+
 router = APIRouter()
 
 @router.post("/upload")
@@ -35,6 +36,6 @@ async def download_and_save_file(request: Request, file_name: str, token: str = 
        
     try:
         db_audio_file = await downloadfromazure(user_id, file_name, db)
-        return {"message": "File downloaded and saved successfully", "audio_file": db_audio_file}
+        return db_audio_file
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
