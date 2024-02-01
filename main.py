@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine
 from config.database import engine
 from server.index import setup_cors
@@ -32,6 +33,7 @@ app = FastAPI()
 
 # API 암호화
 setup_cors(app)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # 원하는 데이터베이스 생성
 AudioFiles.metadata.create_all(bind=engine)
@@ -44,14 +46,14 @@ UserSoundEffects.metadata.create_all(bind=engine)
 users.metadata.create_all(bind=engine)
 
 # Prefix는 엔드포인트를 정할 때 사용
-app.include_router(users_route.router, prefix="", tags=["Users"])
-app.include_router(upload_route.router, prefix="", tags=["UploadFile"])
-app.include_router(AudioFiles_route.router, prefix="", tags=["AudioFiles"])
+app.include_router(users_route.router, prefix="/users", tags=["Users"])
+app.include_router(upload_route.router, prefix="/files", tags=["Files For Azure"])
+app.include_router(AudioFiles_route.router, prefix="/files", tags=["Files For Azure"])
+app.include_router(STTdata_route.router, prefix="", tags=["STTdata"])
+app.include_router(Effectsounds_route.router, prefix="", tags=["Effectsounds"])
+app.include_router(UserEdits_route.router, prefix="", tags=["UserEdits"])
 app.include_router(EditHistory_route.router, prefix="", tags=["EditHistory"])
 app.include_router(EditSession_route.router, prefix="", tags=["EditSession"])
-app.include_router(Effectsounds_route.router, prefix="", tags=["Effectsounds"])
-app.include_router(STTdata_route.router, prefix="", tags=["STTdata"])
-app.include_router(UserEdits_route.router, prefix="", tags=["UserEdits"])
 app.include_router(UserSoundEffects_route.router, prefix="", tags=["UserSoundEffects"])
 
 @app.get('/')

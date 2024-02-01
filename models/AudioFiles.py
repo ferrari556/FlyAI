@@ -25,6 +25,13 @@ class AudioResponse(BaseModel):
     Upload_Date : datetime
     File_Status : str
     
-class AudioDownload(BaseModel):
+class AudioDelete(BaseModel):
     audio_name : str
-    Filepath : str
+    FileType : str
+    Upload_Date : datetime
+
+class AudioRead(BaseModel):
+    audio_name : str
+    FileType : str
+    Upload_Date : datetime
+    File_Status : str

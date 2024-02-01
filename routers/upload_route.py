@@ -4,12 +4,13 @@ from config.database import get_db
 from services.login_service import get_current_user_authorization
 from services.upload_service import uploadtoazure, downloadfromazure
 from models.users import User
+from models.AudioFiles import AudioResponse
 from sqlalchemy.future import select
 from services.login_service import oauth2_scheme
 
 router = APIRouter()
 
-@router.post("/upload", tags=["UploadFile"])
+@router.post("/upload")
 async def create_upload_file(request: Request, file: UploadFile, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     login_id = await get_current_user_authorization(request, token)
     user_id = await get_user_id_by_login_id(db, login_id)
@@ -24,7 +25,7 @@ async def get_user_id_by_login_id(db: AsyncSession, login_id: str):
     user = result.scalar_one_or_none()
     return user.user_id if user else None
 
-@router.post("/download")
+@router.post("/download", response_model = AudioResponse)
 async def download_and_save_file(request: Request, file_name: str, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     login_id = await get_current_user_authorization(request, token)
     user_id = await get_user_id_by_login_id(db, login_id)
@@ -33,7 +34,7 @@ async def download_and_save_file(request: Request, file_name: str, token: str = 
         raise HTTPException(status_code=404, detail="User not found")
        
     try:
-        audio_file = await downloadfromazure(user_id, file_name, db)
-        return {"message": "File downloaded and saved successfully", "audio_file": audio_file}
+        db_audio_file = await downloadfromazure(user_id, file_name, db)
+        return {"message": "File downloaded and saved successfully", "audio_file": db_audio_file}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

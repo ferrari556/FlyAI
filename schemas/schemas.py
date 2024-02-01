@@ -15,11 +15,11 @@ class users(BaseModel):
 class audiofiles(BaseModel): 
     audio_id : int
     user_id : int
-    audio_name : str
+    file_name : str
     FilePath : str
     File_Length : float
     FileType : str
-    Complete_Date : datetime
+    Upload_Date : datetime
     File_Status : str
     
 # STT Data 테이블
@@ -27,15 +27,15 @@ class sttdata(BaseModel):
     text_id : int
     audio_id : int
     Converted_text : str
-    Complete_Convert_Date : datetime
+    Converted_Date : datetime
 
 # Effectsounds 테이블
 class effectsounds(BaseModel): 
     effect_id : int
     effect_name : str
-    Effect_Path : str
-    Effect_Length : float
-    Effect_number : int
+    effect_path : str
+    effect_length : float
+    effect_index : int
 
 # UserEdits 테이블
 class useredits(BaseModel): 
@@ -45,25 +45,25 @@ class useredits(BaseModel):
     effect_id : int
     text_position : int
     effect_status : str
-    
+    session_status : str
+
 # EditSession 테이블
 class editsession(BaseModel): 
     session_id : int
     user_id : int
     audio_id : int
     effect_id: int
-    Edit_start : datetime
-    Edit_finish : datetime
-    Editposition : int
-    session_status : str
-
+    start_edit : datetime
+    end_edit : datetime
+    LastEditPoint : int
+    
 # EditHistory 테이블
 class edithistory(BaseModel): 
     history_id: int
     session_id : int
     user_id : int
-    ChangeContent : str
-    ChangeTime : datetime
+    EditContent : str
+    EditDate : datetime
 
 # UserSoundEffects 테이블 (다대다 관계를 해소하기 위한 중간 테이블)
 class usersoundeffects(BaseModel): 

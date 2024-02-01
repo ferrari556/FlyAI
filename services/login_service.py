@@ -10,7 +10,7 @@ from passlib.context import CryptContext
 import pytz
 
 # JWT 토큰을 위한 OAuth2PasswordBearer 인스턴스 생성
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/test")
 
 SECRET_KEY = "ThisIsTheSecretKeyOfFastAPIApplicationWithSQLAlchemyAndPydantic"
 ALGORITHM = "HS256"

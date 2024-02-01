@@ -8,7 +8,7 @@ from config.database import get_db
 
 router = APIRouter()
 
-@router.get("/usersoundeffects/{id}", tags=["UserSoundEffects"])
+@router.get("/usersoundeffects/{id}")
 async def get_usersoundeffect_by_id(id: int, db: AsyncSession = Depends(get_db)):
     try:
         usersoundeffect = await db.get(UserSoundEffect, id)
@@ -18,7 +18,7 @@ async def get_usersoundeffect_by_id(id: int, db: AsyncSession = Depends(get_db))
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
 
-@router.post("/usersoundeffects", tags=["UserSoundEffects"])
+@router.post("/usersoundeffects")
 async def create_usersoundeffect(usersoundeffect: usersoundeffects, db: AsyncSession = Depends(get_db)):
     try:
         new_usersoundeffect = UserSoundEffect(
@@ -35,7 +35,7 @@ async def create_usersoundeffect(usersoundeffect: usersoundeffects, db: AsyncSes
     finally:
         await db.close()
 
-@router.put("/usersoundeffects/{id}", tags=["UserSoundEffects"])
+@router.put("/usersoundeffects/{id}")
 async def update_usersoundeffect(id: int, usersoundeffect: usersoundeffects, db: AsyncSession = Depends(get_db)):
     try:
         existing_usersoundeffect = await db.get(UserSoundEffect, id)
@@ -54,7 +54,7 @@ async def update_usersoundeffect(id: int, usersoundeffect: usersoundeffects, db:
     finally:
         await db.close()
 
-@router.delete("/usersoundeffects/{id}", tags=["UserSoundEffects"])
+@router.delete("/usersoundeffects/{id}")
 async def delete_usersoundeffect(id: int, db: AsyncSession = Depends(get_db)):
     try:
         existing_usersoundeffect = await db.get(UserSoundEffect, id)

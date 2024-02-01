@@ -8,7 +8,7 @@ from config.database import get_db
 
 router = APIRouter()
 
-@router.get("/sttdata/{text_id}", tags=["STTData"])
+@router.get("/sttdata/{text_id}")
 async def get_sttdata_by_id(text_id: int, db: AsyncSession = Depends(get_db)):
     try:
         sttdata = await db.get(STTData, text_id)
@@ -18,13 +18,13 @@ async def get_sttdata_by_id(text_id: int, db: AsyncSession = Depends(get_db)):
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
 
-@router.post("/sttdata", tags=["STTData"])
+@router.post("/sttdata")
 async def create_sttdata(sttdata: sttdata, db: AsyncSession = Depends(get_db)):
     try:
         new_sttdata = STTData(
             audio_id = sttdata.audio_id,
             Converted_text = sttdata.Converted_text,
-            Complete_Convert_Date = sttdata .Complete_Convert_Date   
+            Converted_date = sttdata.Converted_Date   
         )
         db.add(new_sttdata)
         await db.commit()
@@ -36,7 +36,7 @@ async def create_sttdata(sttdata: sttdata, db: AsyncSession = Depends(get_db)):
     finally:
         await db.close()
 
-@router.put("/sttdata/{text_id}", tags=["STTData"])
+@router.put("/sttdata/{text_id}")
 async def update_sttdata(text_id: int, sttdata: sttdata, db: AsyncSession = Depends(get_db)):
     try:
         existing_sttdata = await db.get(STTData, text_id)
@@ -45,7 +45,7 @@ async def update_sttdata(text_id: int, sttdata: sttdata, db: AsyncSession = Depe
 
         existing_sttdata.audio_id = sttdata.audio_id
         existing_sttdata.Converted_text = sttdata.Converted_text
-        existing_sttdata.Complete_Convert_Date = sttdata.Complete_Convert_Date
+        existing_sttdata.Converted_date = sttdata.Converted_Date
 
         await db.commit()
         await db.refresh(existing_sttdata)
@@ -56,7 +56,7 @@ async def update_sttdata(text_id: int, sttdata: sttdata, db: AsyncSession = Depe
     finally:
         await db.close()
 
-@router.delete("/sttdata/{text_id}", tags=["STTData"])
+@router.delete("/sttdata/{text_id}")
 async def delete_sttdata(text_id: int, db: AsyncSession = Depends(get_db)):
     try:
         existing_sttdata = await db.get(STTData, text_id)

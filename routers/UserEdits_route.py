@@ -8,7 +8,7 @@ from config.database import get_db
 
 router = APIRouter()
 
-@router.get("/useredits/{user_edit_id}", tags=["UserEdits"])
+@router.get("/useredits/{user_edit_id}")
 async def get_useredit_by_id(user_edit_id: int, db: AsyncSession = Depends(get_db)):
     try:
         useredit = await db.get(UserEdit, user_edit_id)
@@ -18,7 +18,7 @@ async def get_useredit_by_id(user_edit_id: int, db: AsyncSession = Depends(get_d
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
 
-@router.post("/useredits", tags=["UserEdits"])
+@router.post("/useredits")
 async def create_useredit(useredit: useredits, db: AsyncSession = Depends(get_db)):
     try:
         new_useredit = UserEdit(
@@ -26,7 +26,8 @@ async def create_useredit(useredit: useredits, db: AsyncSession = Depends(get_db
             audio_id = useredit.audio_id,
             effect_id = useredit.effect_id,
             text_position = useredit.text_position,
-            effect_status = useredit.effect_status       
+            effect_status = useredit.effect_status,
+            session_status = useredit.session_status      
         )
         db.add(new_useredit)
         await db.commit()
@@ -38,7 +39,7 @@ async def create_useredit(useredit: useredits, db: AsyncSession = Depends(get_db
     finally:
         await db.close()
 
-@router.put("/useredits/{user_edit_id}", tags=["UserEdits"])
+@router.put("/useredits/{user_edit_id}")
 async def update_useredit(user_edit_id: int, useredit: useredits, db: AsyncSession = Depends(get_db)):
     try:
         existing_useredit = await db.get(UserEdit, user_edit_id)
@@ -50,7 +51,8 @@ async def update_useredit(user_edit_id: int, useredit: useredits, db: AsyncSessi
         existing_useredit.effect_id = useredit.effect_id
         existing_useredit.text_position = useredit.text_position
         existing_useredit.effect_status = useredit.effect_status
-
+        existing_useredit.session_status = useredit.session_status
+        
         await db.commit()
         await db.refresh(existing_useredit)
         return existing_useredit
@@ -60,7 +62,7 @@ async def update_useredit(user_edit_id: int, useredit: useredits, db: AsyncSessi
     finally:
         await db.close()
 
-@router.delete("/useredits/{user_edit_id}", tags=["UserEdits"])
+@router.delete("/useredits/{user_edit_id}")
 async def delete_useredit(user_edit_id: int, db: AsyncSession = Depends(get_db)):
     try:
         existing_useredit = await db.get(UserEdit, user_edit_id)

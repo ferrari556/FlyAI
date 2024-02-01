@@ -8,7 +8,7 @@ from config.database import get_db
 
 router = APIRouter()
 
-@router.get("/editsessions/{session_id}", tags=["EditSessions"])
+@router.get("/editsessions/{session_id}")
 async def get_editsession_by_id(session_id: int, db: AsyncSession = Depends(get_db)):
     try:
         editsession = await db.get(EditSession, session_id)
@@ -18,17 +18,16 @@ async def get_editsession_by_id(session_id: int, db: AsyncSession = Depends(get_
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
 
-@router.post("/editsessions", tags=["EditSessions"])
+@router.post("/editsessions")
 async def create_editsession(editsession: editsession, db: AsyncSession = Depends(get_db)):
     try:
         new_editsession = EditSession(
             user_id=editsession.user_id,
             audio_id=editsession.audio_id,
             effect_id=editsession.effect_id,
-            Edit_start=editsession.Edit_start,
-            Edit_finish=editsession.Edit_finish,
-            Editposition=editsession.Editposition,
-            session_status=editsession.session_status
+            Edit_start=editsession.start_edit,
+            Edit_finish=editsession.end_edit,
+            LastEditPoint=editsession.LastEditPoint,
         )
         db.add(new_editsession)
         await db.commit()
@@ -40,7 +39,7 @@ async def create_editsession(editsession: editsession, db: AsyncSession = Depend
     finally:
         await db.close()
 
-@router.put("/editsessions/{session_id}", tags=["EditSessions"])
+@router.put("/editsessions/{session_id}")
 async def update_editsession(session_id: int, editsession: editsession, db: AsyncSession = Depends(get_db)):
     try:
         existing_editsession = await db.get(EditSession, session_id)
@@ -50,10 +49,9 @@ async def update_editsession(session_id: int, editsession: editsession, db: Asyn
         existing_editsession.user_id = editsession.user_id
         existing_editsession.audio_id = editsession.audio_id
         existing_editsession.effect_id = editsession.effect_id
-        existing_editsession.Edit_start = editsession.Edit_start
-        existing_editsession.Edit_finish = editsession.Edit_finish
-        existing_editsession.Editposition = editsession.Editposition
-        existing_editsession.session_status = editsession.session_status
+        existing_editsession.start_edit = editsession.start_edit    
+        existing_editsession.end_edit = editsession.end_edit
+        existing_editsession.LastEditPoint = editsession.LastEditPoint
 
         await db.commit()
         await db.refresh(existing_editsession)
@@ -64,7 +62,7 @@ async def update_editsession(session_id: int, editsession: editsession, db: Asyn
     finally:
         await db.close()
 
-@router.delete("/editsessions/{session_id}", tags=["EditSessions"])
+@router.delete("/editsessions/{session_id}")
 async def delete_editsession(session_id: int, db: AsyncSession = Depends(get_db)):
     try:
         existing_editsession = await db.get(EditSession, session_id)

@@ -9,7 +9,7 @@ from mutagen.mp3 import MP3
 import os
 import mimetypes
 
-connect_str = ""
+connect_str = "DefaultEndpointsProtocol=https;AccountName=ferrari556;AccountKey=g8BUEJyJPPinwIYo7QPyAZql3SHflcOXQHFfBSqWijNdor0uC3+2MFslBA16+AnoVvrT1G93xUQe+AStXt7N4g==;EndpointSuffix=core.windows.net"
 
 # 파일 이름으로 오디오 파일 검색
 async def get_audiofile_by_name(db: AsyncSession, file_name: str):

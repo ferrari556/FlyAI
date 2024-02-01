@@ -14,6 +14,7 @@ class UserEdit(Base):
     text_position = Column(Integer)
     effect_status = Column(String(50))
     session_status = Column(String(50))
+    
     # 1:N 관계 설정
     user = relationship("User")
     audio_file = relationship("AudioFile")
