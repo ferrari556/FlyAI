@@ -26,6 +26,7 @@ engine = create_engine(DatabaseURL)
 
 app = FastAPI()
 
+
 # API 암호화
 setup_cors(app)
 # app.mount("/static", StaticFiles(directory="static"), name="static")
