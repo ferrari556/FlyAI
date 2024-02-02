@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from models.AudioFiles import AudioFile
+from models.users import User
 from sqlalchemy.ext.asyncio import AsyncSession
 import pytz, datetime
 from sqlalchemy.future import select
@@ -124,3 +125,8 @@ async def downloadfromazure(user_id: int, File_Name: str, db: AsyncSession):
     except Exception as e:
         # 다른 예외 발생 시 처리
         raise HTTPException(status_code=500, detail=str(e))
+    
+async def get_user_id_by_login_id(db: AsyncSession, login_id: str):
+    result = await db.execute(select(User).filter_by(login_id=login_id))
+    user = result.scalar_one_or_none()
+    return user.user_id if user else None

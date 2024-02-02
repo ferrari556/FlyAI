@@ -18,9 +18,6 @@ class UserLogin(BaseModel):
 class Usercreate(BaseModel):
     login_id: str
     login_pw: str
-
-class UserinDB(Usercreate):
-    created_at : datetime
     
 class UserResponse(BaseModel):
     login_id: str

@@ -10,6 +10,7 @@ from models.users import UserLogin
 
 router = APIRouter()
 
+# 유저 토큰값 조회 API
 @router.get("/auth")
 async def read_user_me(request: Request, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     # 토큰을 사용하여 사용자 인증을 수행합니다.
@@ -33,30 +34,26 @@ async def get_user_by_id(user_id: int, db: AsyncSession = Depends(get_db)):
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
 
-# 사용자 생성
+# 사용자 생성 API
 @router.post("/signup", response_model = UserResponse)
 async def signup(user: Usercreate, db: AsyncSession = Depends(get_db)):
     try:
-        db_user = await login_service.create_user(db, user)
-        
-        return {
-            "login_id": db_user.login_id,
-            "login_pw": db_user.login_pw,
-            "created_at": db_user.created_at,
-        }
-        
+        db_user = await login_service.create_user(db, user)       
+        return db_user
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+# 유저 로그인 API
 @router.post("/login")
 async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):
     db_user = await login_service.authenticate_user(db, user.login_id, user.login_pw)
     if not db_user:
         raise HTTPException(status_code=401, detail="Incorrect username or password")
-
+    
     access_token = login_service.create_access_token({"sub": db_user.login_id})
     return {"login_id": db_user.login_id, "access_token": access_token, "token_type": "bearer"}
 
+# FastAPI 내에서 테스트를 하기 위한 API
 @router.post("/test")
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
     db_user = await login_service.authenticate_user(db, form_data.username, form_data.password)
