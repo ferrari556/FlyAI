@@ -8,14 +8,15 @@ from datetime import datetime
 class EditSession(Base):
     __tablename__ = 'EditSession'
     session_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('user.user_id'))
-    audio_id = Column(Integer, ForeignKey('audioFile.audio_id'))
-    effect_id = Column(Integer, ForeignKey('Effectsound.effect_id'))
-    start_edit = Column(DateTime)
-    end_edit = Column(DateTime)
+    user_id = Column(Integer, ForeignKey('User.user_id'))
+    audio_id = Column(Integer, ForeignKey('AudioFile.audio_id'))
+    result_id = Column(Integer, ForeignKey('Result.result_id'))
+    Start_Edit = Column(DateTime)
+    End_Edit = Column(DateTime)
     LastEditPoint = Column(Integer)
+    Session_State = Column(String(50))
     
     # 1:N 관계 설정
     user = relationship("User")
     audio_file = relationship("AudioFile")
-    effect_sound = relationship("EffectSound")
+    result = relationship("Result")

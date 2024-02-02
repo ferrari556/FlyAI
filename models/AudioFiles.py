@@ -1,14 +1,14 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from config.database import Base
 from pydantic import BaseModel
 from datetime import datetime
 
 class AudioFile(Base):
-    __tablename__ = 'audioFile'
+    __tablename__ = 'AudioFile'
     audio_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('user.user_id'))
-    file_name = Column(String(255))
+    user_id = Column(Integer, ForeignKey('User.user_id'))
+    File_Name = Column(String(255))
     FilePath = Column(String(255))
     File_Length = Column(Float)
     FileType = Column(String(50))
@@ -20,18 +20,18 @@ class AudioFile(Base):
 
 class AudioResponse(BaseModel):
     audio_id : int
-    file_name : str
+    File_Name : str
     FileType : str
     Upload_Date : datetime
     File_Status : str
     
 class AudioDelete(BaseModel):
-    file_name : str
+    File_Name : str
     FileType : str
     Upload_Date : datetime
 
 class AudioRead(BaseModel):
-    file_name : str
+    File_Name : str
     FileType : str
     Upload_Date : datetime
     File_Status : str

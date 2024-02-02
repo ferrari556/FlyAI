@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from config.database import Base
 from pydantic import BaseModel
@@ -8,14 +8,13 @@ from datetime import datetime
 class UserEdit(Base):
     __tablename__ = 'UserEdit'
     user_edit_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('user.user_id'))
-    audio_id = Column(Integer, ForeignKey('audioFile.audio_id'))
-    effect_id = Column(Integer, ForeignKey('Effectsound.effect_id'))
-    text_position = Column(Integer)
-    effect_status = Column(String(50))
-    session_status = Column(String(50))
+    user_id = Column(Integer, ForeignKey('User.user_id'))
+    audio_id = Column(Integer, ForeignKey('AudioFile.audio_id'))
+    result_id = Column(Integer, ForeignKey('Result.result_id'))
+    Text_Position = Column(Integer)
+    Effect_Status = Column(Boolean)
     
     # 1:N 관계 설정
     user = relationship("User")
     audio_file = relationship("AudioFile")
-    effect_sound = relationship("EffectSound")
+    result = relationship("Result")

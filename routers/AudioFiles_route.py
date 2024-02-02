@@ -1,9 +1,14 @@
 from models.AudioFiles import AudioFile, AudioDelete, AudioRead
+from models.users import User
+from models.AudioFiles import AudioResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, HTTPException
-from schemas.schemas import audiofiles
+from sqlalchemy.future import select
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, Request
 from fastapi.responses import JSONResponse
 from config.database import get_db
+from services.login_service import get_current_user_authorization
+from services.upload_service import uploadtoazure, downloadfromazure
+from services.login_service import oauth2_scheme
 
 router = APIRouter()
 
@@ -32,7 +37,7 @@ async def delete_audiofile(audio_id: int, db: AsyncSession = Depends(get_db)):
 
         # 오디오 파일 정보를 기반으로 응답 데이터 생성
         response_data = {
-            "file_name": existing_audiofile.file_name,
+            "File_Name": existing_audiofile.File_Name,
             "FileType": existing_audiofile.FileType,
             "Upload_Date": existing_audiofile.Upload_Date
         }
@@ -45,3 +50,32 @@ async def delete_audiofile(audio_id: int, db: AsyncSession = Depends(get_db)):
         return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
     finally:
         await db.close()
+        
+@router.post("/upload")
+async def create_upload_file(request: Request, file: UploadFile, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+    login_id = await get_current_user_authorization(request, token)
+    user_id = await get_user_id_by_login_id(db, login_id)
+    if user_id is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    file_data = await file.read()
+    return await uploadtoazure(file.filename, file.content_type, file_data, user_id, db)
+
+async def get_user_id_by_login_id(db: AsyncSession, login_id: str):
+    result = await db.execute(select(User).filter_by(login_id=login_id))
+    user = result.scalar_one_or_none()
+    return user.user_id if user else None
+
+@router.post("/download", response_model = AudioResponse)
+async def download_and_save_file(request: Request, File_Name: str, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+    login_id = await get_current_user_authorization(request, token)
+    user_id = await get_user_id_by_login_id(db, login_id)
+    
+    if user_id is None:
+        raise HTTPException(status_code=404, detail="User not found")
+       
+    try:
+        db_audio_file = await downloadfromazure(user_id, File_Name, db)
+        return db_audio_file
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -24,8 +24,8 @@ async def create_edithistory(edithistory: edithistory, db: AsyncSession = Depend
         new_history = EditHistory(
             session_id=edithistory.session_id,
             user_id=edithistory.user_id,
-            ChangeContent=edithistory.EditContent,
-            ChangeTime=edithistory.EditDate
+            EditContent=edithistory.EditContent,
+            EditDate=edithistory.EditDate
         )
         db.add(new_history)
         await db.commit()

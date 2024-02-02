@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from config.database import Base
 from pydantic import BaseModel
@@ -9,7 +9,7 @@ class EditHistory(Base):
     __tablename__ = 'EditHistory'
     history_id = Column(Integer, primary_key=True)
     session_id = Column(Integer, ForeignKey('EditSession.session_id'))
-    user_id = Column(Integer, ForeignKey('user.user_id'))
+    user_id = Column(Integer, ForeignKey('User.user_id'))
     EditContent = Column(Text)
     EditDate = Column(DateTime)
     

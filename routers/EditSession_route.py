@@ -24,10 +24,11 @@ async def create_editsession(editsession: editsession, db: AsyncSession = Depend
         new_editsession = EditSession(
             user_id=editsession.user_id,
             audio_id=editsession.audio_id,
-            effect_id=editsession.effect_id,
-            Edit_start=editsession.start_edit,
-            Edit_finish=editsession.end_edit,
+            result_id=editsession.result_id,
+            Start_Edit=editsession.Start_Edit,
+            End_Edit=editsession.End_Edit,
             LastEditPoint=editsession.LastEditPoint,
+            Session_state=editsession.Session_State
         )
         db.add(new_editsession)
         await db.commit()
@@ -48,11 +49,12 @@ async def update_editsession(session_id: int, editsession: editsession, db: Asyn
 
         existing_editsession.user_id = editsession.user_id
         existing_editsession.audio_id = editsession.audio_id
-        existing_editsession.effect_id = editsession.effect_id
-        existing_editsession.start_edit = editsession.start_edit    
-        existing_editsession.end_edit = editsession.end_edit
+        existing_editsession.result_id = editsession.result_id
+        existing_editsession.Start_Edit = editsession.Start_Edit    
+        existing_editsession.End_Edit = editsession.End_Edit
         existing_editsession.LastEditPoint = editsession.LastEditPoint
-
+        existing_editsession.Session_State = editsession.Session_State
+        
         await db.commit()
         await db.refresh(existing_editsession)
         return existing_editsession
