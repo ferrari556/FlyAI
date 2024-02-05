@@ -37,8 +37,7 @@ class useredits(BaseModel):
     user_id : int
     audio_id : int
     result_id : int
-    Text_Position : int
-    Effect_Status : bool
+    Applied_Effect : bool
 
 # EditSession 테이블
 class editsession(BaseModel): 
@@ -55,6 +54,8 @@ class editsession(BaseModel):
 class edithistory(BaseModel): 
     history_id: int
     session_id : int
-    user_id : int
-    EditContent : str
+    result_id : int
+    Edit_Action : str
+    Original_Text : str
+    Edited_Text : str
     EditDate : datetime

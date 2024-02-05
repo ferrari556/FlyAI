@@ -15,7 +15,6 @@ from routers import (
     EditHistory_route,
     EditSession_route,
     UserEdits_route,
-    Results_route,
     users_route
 )
 
@@ -42,7 +41,6 @@ users.metadata.create_all(bind=engine)
 # Prefix는 엔드포인트를 정할 때 사용
 app.include_router(users_route.router, prefix="/users", tags=["Users"])
 app.include_router(AudioFiles_route.router, prefix="/files", tags=["Audio Files For Azure"])
-# app.include_router(Results_route.router, prefix="/files", tags=["Result Files"])
 app.include_router(UserEdits_route.router, prefix="", tags=["UserEdits"])
 app.include_router(EditHistory_route.router, prefix="", tags=["EditHistory"])
 app.include_router(EditSession_route.router, prefix="", tags=["EditSession"])

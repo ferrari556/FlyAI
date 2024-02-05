@@ -23,10 +23,13 @@ async def create_edithistory(edithistory: edithistory, db: AsyncSession = Depend
     try:
         new_history = EditHistory(
             session_id=edithistory.session_id,
-            user_id=edithistory.user_id,
-            EditContent=edithistory.EditContent,
-            EditDate=edithistory.EditDate
+            result_id=edithistory.result_id,
+            Edit_Action=edithistory.Edit_Action,
+            Original_Text=edithistory.Original_Text,
+            Edited_Text=edithistory.Edited_Text,
+            EditData=edithistory.EditDate
         )
+        
         db.add(new_history)
         await db.commit()
         await db.refresh(new_history)
@@ -45,8 +48,10 @@ async def update_edithistory(history_id: int, edithistory: edithistory, db: Asyn
             raise HTTPException(status_code=404, detail="EditHistory not found")
         
         existing_history.session_id = edithistory.session_id
-        existing_history.user_id = edithistory.user_id
-        existing_history.EditContent = edithistory.EditContent
+        existing_history.result_id = edithistory.result_id
+        existing_history.Edit_Action = edithistory.Edit_Action
+        existing_history.Original_Text = edithistory.Original_Text
+        existing_history.Edited_Text = edithistory.Edited_Text
         existing_history.EditDate = edithistory.EditDate
 
         await db.commit()

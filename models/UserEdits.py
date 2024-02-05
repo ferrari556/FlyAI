@@ -11,8 +11,7 @@ class UserEdit(Base):
     user_id = Column(Integer, ForeignKey('User.user_id'))
     audio_id = Column(Integer, ForeignKey('AudioFile.audio_id'))
     result_id = Column(Integer, ForeignKey('Result.result_id'))
-    Text_Position = Column(Integer)
-    Effect_Status = Column(Boolean)
+    Applied_Effect = Column(Boolean)
     
     # 1:N 관계 설정
     user = relationship("User")

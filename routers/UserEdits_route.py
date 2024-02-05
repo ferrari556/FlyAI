@@ -25,8 +25,7 @@ async def create_useredit(useredit: useredits, db: AsyncSession = Depends(get_db
             user_id = useredit.user_id,
             audio_id = useredit.audio_id,
             result_id = useredit.result_id,
-            Text_Position = useredit.Text_Position,
-            Effect_Status = useredit.Effect_Status    
+            Effect_Status = useredit.Applied_Effect    
         )
         db.add(new_useredit)
         await db.commit()
@@ -48,8 +47,7 @@ async def update_useredit(user_edit_id: int, useredit: useredits, db: AsyncSessi
         existing_useredit.user_id = useredit.user_id
         existing_useredit.audio_id = useredit.audio_id
         existing_useredit.result_id = useredit.result_id
-        existing_useredit.Text_Position = useredit.Text_Position
-        existing_useredit.Effect_Status = useredit.Effect_Status
+        existing_useredit.Applied_Effect = useredit.Applied_Effect
         
         await db.commit()
         await db.refresh(existing_useredit)

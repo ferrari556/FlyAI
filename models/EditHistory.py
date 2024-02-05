@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from config.database import Base
 from pydantic import BaseModel
@@ -9,10 +9,12 @@ class EditHistory(Base):
     __tablename__ = 'EditHistory'
     history_id = Column(Integer, primary_key=True)
     session_id = Column(Integer, ForeignKey('EditSession.session_id'))
-    user_id = Column(Integer, ForeignKey('User.user_id'))
-    EditContent = Column(Text)
+    result_id = Column(Integer, ForeignKey('Result.result_id'))
+    Edit_Action = Column(String(30))
+    Original_Text = Column(String(255))
+    Edited_Text = Column(String(255))
     EditDate = Column(DateTime)
     
     # 1:N 관계 설정
     edit_session = relationship("EditSession")
-    user = relationship("User")
+    result = relationship("Result")
