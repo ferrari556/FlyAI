@@ -1,13 +1,12 @@
 from fastapi import HTTPException, Request
 from fastapi.security import OAuth2PasswordBearer
 from datetime import datetime, timedelta
-import jwt
+import jwt, pytz
 from jwt import PyJWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from models.users import User
 from passlib.context import CryptContext
-import pytz
 
 # JWT 토큰을 위한 OAuth2PasswordBearer 인스턴스 생성
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/users/test")

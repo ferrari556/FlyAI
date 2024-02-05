@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, Request
 from fastapi.responses import JSONResponse
 from config.database import get_db
 from services.login_service import get_current_user_authorization
-from services.upload_service import uploadtoazure, downloadfromazure, get_user_id_by_login_id
+from services.audio_service import uploadtoazure, downloadfromazure, get_user_id_by_login_id
 from services.login_service import oauth2_scheme
 
 router = APIRouter()
