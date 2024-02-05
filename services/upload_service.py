@@ -3,15 +3,28 @@ from azure.storage.blob import BlobServiceClient
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from models.AudioFiles import AudioFile
 from models.users import User
+from models.Results import Result 
 from sqlalchemy.ext.asyncio import AsyncSession
-import pytz, datetime, os, mimetypes, librosa
-import soundfile as sf
-import numpy as np
-from pydub import AudioSegment
+import pytz, datetime, os, mimetypes, librosa, wave,contextlib, soundfile as sf, numpy as np
 from sqlalchemy.future import select
 from mutagen.mp3 import MP3
+from typing import List
+from pydub import AudioSegment
 
 connect_str = "DefaultEndpointsProtocol=https;AccountName=ferrari556;AccountKey=g8BUEJyJPPinwIYo7QPyAZql3SHflcOXQHFfBSqWijNdor0uC3+2MFslBA16+AnoVvrT1G93xUQe+AStXt7N4g==;EndpointSuffix=core.windows.net"
+
+
+def get_wav_length(wav_path):
+    with contextlib.closing(wave.open(wav_path, 'r')) as f:
+        frames = f.getnframes()
+        rate = f.getframerate()
+        duration = frames / float(rate)
+        return duration
+    
+# 파일 이름으로 오디오 파일 검색
+async def get_audiofile_by_name(db: AsyncSession, File_Name: str):
+    result = await db.execute(select(AudioFile).filter_by(File_Name=File_Name))
+    return result.scalar_one_or_none()
 
 # 오디오 파일 전처리
 class AudioProcessor:
@@ -66,7 +79,7 @@ class AudioProcessor:
             os.makedirs(self.output_dir)
 
         # wav 파일 로드합니다.
-        y, sr = librosa.load(self.wav_path, sr=None)
+        y, sr = librosa.load(self.wav_path, sr=16000)
 
         gap = []
         for i in range(1, len(y)):
@@ -76,16 +89,16 @@ class AudioProcessor:
         gap = np.array(gap)
 
         arr, idx = self._split_array(gap, criteria, num)
-
-        # 지정된 길이 segment_samples로 분할하여 WAV 파일로 저장
+        segment_paths = []
+        
         for i in range(len(idx)-1):
             start_sample = idx[i]
             end_sample = idx[i+1]
-            output_path = f"{self.output_dir}/{self.id}_{i}-1.wav"
+            segment_path = f"{self.output_dir}/{self.id}_{i}.wav"  # Define the path for this segment
+            sf.write(segment_path, y[start_sample:end_sample], sr)  # Save the segment
+            segment_paths.append(segment_path)  # Add the path to the list
 
-            # 여기서는 segment로 분할된 오디오 데이터를 WAV 파일로 저장한다.
-            sf.write(output_path, y[start_sample:end_sample], sr)
-
+        return segment_paths  # Return the list of paths
 
     def _critria_mean(self, y):
         filtered_values = y[y <= 0.01]
@@ -123,11 +136,8 @@ class AudioProcessor:
 
     def process_audio(self):
 
-        # Convert MP3 to WAV
-        # self.convert_audio_type()
-
         # Load the WAV file
-        y, sr = librosa.load(self.wav_path, sr=None)
+        y, sr = librosa.load(self.wav_path, sr=16000)
 
         
         # Calculate the absolute differences
@@ -140,14 +150,26 @@ class AudioProcessor:
         dur_mean = self._all_duration(y_a, medc)  #0.05
         mind_meanc = np.max(dur_mean)
 
-        # Split and save the audio
-        self._split_and_save(meanc, mind_meanc)
-        
-# 파일 이름으로 오디오 파일 검색
-async def get_audiofile_by_name(db: AsyncSession, File_Name: str):
-    result = await db.execute(select(AudioFile).filter_by(File_Name=File_Name))
-    return result.scalar_one_or_none()
+        segment_paths = self._split_and_save(meanc, 16000)
 
+        return segment_paths
+
+async def split_and_save_results(db : AsyncSession, audio_id: int, segments_info: List[str]):
+    if segments_info is None:
+        raise ValueError("segments_info is None, which indicates no segments were processed or returned.")
+    
+    for index, segment_path in enumerate(segments_info):
+        new_result = Result(
+            audio_id=audio_id,
+            Index=index+1,
+            Converted_Result="X",
+            Is_Text=False,
+            EffectFilePath=segment_path,
+            Converted_Date=datetime.datetime.now()
+        )
+        db.add(new_result)
+    await db.commit()
+          
 async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: int, db: AsyncSession):
     # 파일 이름으로 기존 오디오 파일 존재 여부 확인
     existing_audiofile = await get_audiofile_by_name(db, File_Name)
@@ -165,9 +187,7 @@ async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: i
     blob_client = None
     
     try:
-        # MP3 파일의 재생 시간 계산
-        audio = MP3(temp_file_path)
-        file_length = audio.info.length  # 재생 시간 (초 단위)
+        file_length = get_wav_length(temp_file_path)
         
         # 컨테이너 생성 (존재하지 않는 경우에만)
         try:
@@ -196,27 +216,30 @@ async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: i
 
         db.add(audio_file)
         await db.commit()
+        await db.refresh(audio_file)
         
-        # 추가된 분할 로직
-        output_dir = f"./processed_audio/user_id_{user_id}"  # 분할된 파일을 저장할 디렉토리
+        # 오디오 파일 처리
+        output_dir = f"./processed_audio/user_{user_id}"
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
-        
-        # 분할 로직을 위한 다운로드 로직 필요 (blob_url 사용)
-        # 여기서는 로컬 파일 경로(temp_file_path)를 사용
-        processor = AudioProcessor(user_id, temp_file_path, output_dir)
-        processor.process_audio()
-       
-    except Exception as e:       
-        # 예외 처리 블록에서 blob_client가 None인지 확인합니다.
-        if blob_client is not None:
-            await blob_client.delete_blob()
-        raise e
+
+        processor = AudioProcessor(audio_file.audio_id, temp_file_path, output_dir)
+        segments_info = processor.process_audio()
+        await split_and_save_results(db, audio_file.audio_id, segments_info)
+              
+    except Exception as e:
+        # blob_client가 초기화되었고, 예외 발생 시 해당 blob 삭제
+        if blob_client:
+            try:
+                await blob_client.delete_blob()  # blob 삭제 시도
+            except Exception as delete_error:
+                print(f"Failed to delete blob: {delete_error}")
+        raise e  # 원래 발생한 예외 다시 발생시킴
+
     finally:
-        # 임시 파일 삭제
+        # 함수 종료 전에 임시 파일 삭제
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
-        pass
 
     return audio_file
 

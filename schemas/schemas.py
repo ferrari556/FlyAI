@@ -25,10 +25,10 @@ class audiofiles(BaseModel):
 class Result(BaseModel):
     result_id : int
     audio_id : int
-    Text_Index : int
-    OriginalText : str
+    Index : int
+    Converted_Result : str
+    Is_Text : bool
     EffectFilePath : str
-    EffectDescription : str
     Converted_Date : datetime
     
 # UserEdits 테이블
