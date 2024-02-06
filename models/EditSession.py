@@ -20,6 +20,9 @@ class EditSession(Base):
     audio_file = relationship("AudioFile")
     edit_history = relationship("EditHistory", foreign_keys=[last_edit_history_id])
     
+class SessionRead(BaseModel):
+    session_id : int
+    user_id : int
     
 class SessionResponse(BaseModel):
     session_id : int

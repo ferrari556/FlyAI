@@ -18,7 +18,6 @@ from routers import (
 )
 
 # 초기 데이터베이스 연결
-# DatabaseURL = 'mysql+pymysql://root:1234@localhost:3306/test'
 DatabaseURL = 'mysql+pymysql://root:1234@localhost:3306/test'
 engine = create_engine(DatabaseURL)
 

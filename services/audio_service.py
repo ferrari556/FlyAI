@@ -22,10 +22,10 @@ def get_wav_length(wav_path):
         duration = frames / float(rate)
         return duration
     
-# 파일 이름으로 오디오 파일 검색
-async def get_audiofile_by_name(db: AsyncSession, File_Name: str):
-    result = await db.execute(select(AudioFile).filter_by(File_Name=File_Name))
-    return result.scalar_one_or_none()
+# 파일 이름과 사용자 ID로 오디오 파일 검색
+async def get_audiofile_by_name(db: AsyncSession, user_id: int, File_Name: str):
+    result = await db.execute(select(AudioFile).filter(AudioFile.user_id == user_id, AudioFile.File_Name == File_Name))
+    return result.scalars().first()
 
 # 분할 파일 데이터베이스에 저장
 async def split_and_save_results(db : AsyncSession, audio_id: int, segments_info: List[str]):
@@ -48,7 +48,7 @@ async def split_and_save_results(db : AsyncSession, audio_id: int, segments_info
 async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: int, db: AsyncSession):
     
     # 파일 이름으로 기존 오디오 파일 존재 여부 확인
-    existing_audiofile = await get_audiofile_by_name(db, File_Name)
+    existing_audiofile = await get_audiofile_by_name(db, user_id, File_Name)
     if existing_audiofile:
         raise ValueError("File Name Already Used")
 

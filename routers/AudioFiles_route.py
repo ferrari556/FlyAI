@@ -1,7 +1,7 @@
 from models.AudioFiles import AudioFile, AudioDelete, AudioRead
 from models.AudioFiles import AudioResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, Request
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, Request, status
 from fastapi.responses import JSONResponse
 from config.database import get_db
 from services.login_service import get_current_user_authorization
@@ -46,9 +46,8 @@ async def delete_audiofile(audio_id: int, db: AsyncSession = Depends(get_db)):
         return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
     finally:
         await db.close()
-  
-# Azure Blob Storage로 파일 업로드      
-@router.post("/upload")
+
+@router.post("/upload", status_code=200)
 async def create_upload_file(request: Request, file: UploadFile, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     login_id = await get_current_user_authorization(request, token)
     user_id = await get_user_id_by_login_id(db, login_id)
@@ -56,8 +55,18 @@ async def create_upload_file(request: Request, file: UploadFile, token: str = De
         raise HTTPException(status_code=404, detail="User not found")
 
     file_data = await file.read()
-    return await uploadtoazure(file.filename, file.content_type, file_data, user_id, db)
-
+    audio_file = await uploadtoazure(file.filename, file.content_type, file_data, user_id, db)
+    
+    return JSONResponse(status_code=200, content={
+        "audio_id": audio_file.audio_id,
+        "File_Name": audio_file.File_Name,
+        "FilePath": audio_file.FilePath,
+        "File_Length": audio_file.File_Length,
+        "FileType": audio_file.FileType,
+        "Upload_Date": audio_file.Upload_Date.isoformat(),  # datetime 객체는 ISO 포맷으로 변환
+        "File_Status": audio_file.File_Status
+    })
+    
 # Azure Blob Storage에서 파일 다운로드   
 @router.post("/download", response_model = AudioResponse)
 async def download_and_save_file(request: Request, File_Name: str, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
