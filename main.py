@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine
 from config.database import engine
 from server.index import setup_cors
@@ -41,9 +40,9 @@ users.metadata.create_all(bind=engine)
 # Prefix는 엔드포인트를 정할 때 사용
 app.include_router(users_route.router, prefix="/users", tags=["Users"])
 app.include_router(AudioFiles_route.router, prefix="/files", tags=["Audio Files For Azure"])
-app.include_router(UserEdits_route.router, prefix="", tags=["UserEdits"])
-app.include_router(EditHistory_route.router, prefix="", tags=["EditHistory"])
-app.include_router(EditSession_route.router, prefix="", tags=["EditSession"])
+app.include_router(UserEdits_route.router, prefix="/edits", tags=["Edits"])
+app.include_router(EditHistory_route.router, prefix="/historys", tags=["Historys"])
+app.include_router(EditSession_route.router, prefix="/sessions", tags=["Sessions"])
 
 @app.get('/')
 def home():

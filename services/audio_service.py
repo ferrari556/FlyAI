@@ -5,15 +5,16 @@ from models.AudioFiles import AudioFile
 from models.users import User
 from models.Results import Result 
 from sqlalchemy.ext.asyncio import AsyncSession
-import pytz, datetime, os, mimetypes, librosa, wave,contextlib, soundfile as sf, numpy as np
+from services.processing_service import AudioProcessor
+import pytz, datetime, os, mimetypes, wave,contextlib
 from sqlalchemy.future import select
 from mutagen.mp3 import MP3
 from typing import List
-from pydub import AudioSegment
+
 
 connect_str = "DefaultEndpointsProtocol=https;AccountName=ferrari556;AccountKey=g8BUEJyJPPinwIYo7QPyAZql3SHflcOXQHFfBSqWijNdor0uC3+2MFslBA16+AnoVvrT1G93xUQe+AStXt7N4g==;EndpointSuffix=core.windows.net"
 
-
+# wav 파일 길이 정보 함수
 def get_wav_length(wav_path):
     with contextlib.closing(wave.open(wav_path, 'r')) as f:
         frames = f.getnframes()
@@ -26,140 +27,13 @@ async def get_audiofile_by_name(db: AsyncSession, File_Name: str):
     result = await db.execute(select(AudioFile).filter_by(File_Name=File_Name))
     return result.scalar_one_or_none()
 
-# 오디오 파일 전처리
-class AudioProcessor:
-    def __init__(self, id, wav_path, output_dir):
-        self.id = id
-        self.wav_path = wav_path
-        self.output_dir = output_dir
-
-    def convert_audio_type(self):
-        audSeg = AudioSegment.from_mp3(self.wav_path)
-        audSeg.export(self.wav_path, format="wav")
-
-
-    def _split_array(self, arr, c, n):
-        result_arr = []
-        result_idx = [0,]
-        current_group = [arr[0]]
-        count = 1
-        idx_counter = 1 # 인덱스 슬라이싱은 마지막 인덱스 미포함이니까
-
-        for i in range(1, len(arr)):
-            idx_counter += 1
-            current_group.append(arr[i])
-            if arr[i] <= c:
-                if arr[i-1]<=c:
-                    count += 1
-                else:
-                    count = 1
-            if count>=n and len(arr)>idx_counter+1 and arr[i+1]>c:
-                result_idx.append(idx_counter)
-                result_arr.append(current_group.copy())
-                current_group.clear()
-                count = 1
-
-        if len(current_group)!=0:
-            result_arr.append(current_group.copy())
-
-        result_idx.append(len(arr))
-
-        return result_arr, result_idx
-
-
-    def _split_and_save(self, criteria, num):
-        """
-        - wav_path : 로드할 WAV 파일의 경로
-        - output_dir : WAV 파일들을 저장할 디렉토리 경로
-        - segment_length : 분할할 세그먼트의 길이 (초 단위, 기본값은 30초)
-        """
-        
-        # 출력 디렉토리가 존재하지 않으면 생성
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
-
-        # wav 파일 로드합니다.
-        y, sr = librosa.load(self.wav_path, sr=16000)
-
-        gap = []
-        for i in range(1, len(y)):
-            a = abs(y[i-1]-y[i])
-            gap.append(a)
-        
-        gap = np.array(gap)
-
-        arr, idx = self._split_array(gap, criteria, num)
-        segment_paths = []
-        
-        for i in range(len(idx)-1):
-            start_sample = idx[i]
-            end_sample = idx[i+1]
-            segment_path = f"{self.output_dir}/{self.id}_{i}.wav"  # Define the path for this segment
-            sf.write(segment_path, y[start_sample:end_sample], sr)  # Save the segment
-            segment_paths.append(segment_path)  # Add the path to the list
-
-        return segment_paths  # Return the list of paths
-
-    def _critria_mean(self, y):
-        filtered_values = y[y <= 0.01]
-        average_value = np.mean(filtered_values)
-        return average_value
-
-    def _critria_med(self, y):
-        filtered_values = y[y <= 0.01]
-        max_value = np.median(filtered_values)
-        return max_value
-
-    def _all_duration(self, arr, c):
-        res_dur = []
-        current_group = []
-        count = 1
-        s = 0
-
-        for i in range(len(arr)):
-            if arr[i] <= c:
-                if s==0:
-                    s=1
-                current_group.append(arr[i])
-            if s==1 and arr[i]>c:
-                res_dur.append(len(current_group))
-                current_group.clear()
-                s=0
-
-        if len(current_group)!=0:
-            res_dur.append(len(current_group))
-
-        res_dur = np.array(res_dur)
-        filtered_values = res_dur[res_dur > 10000]
-        return filtered_values
-
-
-    def process_audio(self):
-
-        # Load the WAV file
-        y, sr = librosa.load(self.wav_path, sr=16000)
-
-        
-        # Calculate the absolute differences
-        tmp = [abs(y[i-1] - y[i]) for i in range(1, len(y))]
-        y_a = np.array(tmp)
-
-        # Calculate criteria values
-        medc = self._critria_med(y_a)
-        meanc = self._critria_mean(y_a)
-        dur_mean = self._all_duration(y_a, medc)  #0.05
-        mind_meanc = np.max(dur_mean)
-
-        segment_paths = self._split_and_save(meanc, 16000)
-
-        return segment_paths
-
+# 분할 파일 데이터베이스에 저장
 async def split_and_save_results(db : AsyncSession, audio_id: int, segments_info: List[str]):
     if segments_info is None:
         raise ValueError("segments_info is None, which indicates no segments were processed or returned.")
     
     for index, segment_path in enumerate(segments_info):
-        new_result = Result(
+        result = Result(
             audio_id=audio_id,
             Index=index+1,
             Converted_Result="X",
@@ -167,10 +41,12 @@ async def split_and_save_results(db : AsyncSession, audio_id: int, segments_info
             EffectFilePath=segment_path,
             Converted_Date=datetime.datetime.now()
         )
-        db.add(new_result)
+        db.add(result)
     await db.commit()
-          
+    
+# Azure Blob Storage로 분할 파일과 원본 파일 업로드
 async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: int, db: AsyncSession):
+    
     # 파일 이름으로 기존 오디오 파일 존재 여부 확인
     existing_audiofile = await get_audiofile_by_name(db, File_Name)
     if existing_audiofile:
@@ -219,11 +95,20 @@ async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: i
         await db.refresh(audio_file)
         
         # 오디오 파일 처리
-        output_dir = f"./processed_audio/user_{user_id}"
+        output_dir = f"./processed_audio/user{user_id}"
+        
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        processor = AudioProcessor(audio_file.audio_id, temp_file_path, output_dir)
+        container_name = f"processed-audio{user_id}"
+        
+        # 컨테이너 생성 (존재하지 않는 경우에만)
+        try:
+            blob_service_client.create_container(container_name)
+        except ResourceExistsError:
+            pass
+        
+        processor = AudioProcessor(audio_file.audio_id, temp_file_path, output_dir, blob_service_client, container_name)
         segments_info = processor.process_audio()
         await split_and_save_results(db, audio_file.audio_id, segments_info)
               
@@ -293,3 +178,10 @@ async def get_user_id_by_login_id(db: AsyncSession, login_id: str):
     result = await db.execute(select(User).filter_by(login_id=login_id))
     user = result.scalar_one_or_none()
     return user.user_id if user else None
+
+async def get_audio_id_by_user_id(db: AsyncSession, user_id: int):
+    result = await db.execute(
+        select(AudioFile).where(AudioFile.user_id == user_id).order_by(AudioFile.audio_id.desc()).limit(1)
+    )
+    audio = result.scalar_one_or_none()  # 여기서는 first()를 사용해 첫 번째 결과만 가져옵니다.
+    return audio.audio_id if audio else None

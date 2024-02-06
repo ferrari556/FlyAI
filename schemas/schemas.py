@@ -47,8 +47,8 @@ class editsession(BaseModel):
     result_id: int
     Start_Edit : datetime
     End_Edit : datetime
-    LastEditPoint : int
     Session_State : str
+    last_edit_history : int
     
 # EditHistory 테이블
 class edithistory(BaseModel): 
