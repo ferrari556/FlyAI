@@ -1,8 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from config.database import Base
 from pydantic import BaseModel
-from typing import Optional, List
 from datetime import datetime
 
 class EditSession(Base):
@@ -33,10 +32,10 @@ class SessionCreate(BaseModel):
     audio_id: int
 
 class SessionUpdate(BaseModel):
-    last_edit_history: int
+    last_edit_history_id: int
 
 class SessionPause(BaseModel):
     session_id : int
     End_Edit : datetime
     Session_State : str
-    last_edit_history : int
+    last_edit_history_id : int

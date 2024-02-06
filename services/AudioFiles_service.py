@@ -5,7 +5,7 @@ from models.AudioFiles import AudioFile
 from models.users import User
 from models.Results import Result 
 from sqlalchemy.ext.asyncio import AsyncSession
-from services.processing_service import AudioProcessor
+from services.audio_processing import AudioProcessor
 import pytz, datetime, os, mimetypes, wave,contextlib
 from sqlalchemy.future import select
 from mutagen.mp3 import MP3
@@ -185,3 +185,21 @@ async def get_audio_id_by_user_id(db: AsyncSession, user_id: int):
     )
     audio = result.scalar_one_or_none()  # 여기서는 first()를 사용해 첫 번째 결과만 가져옵니다.
     return audio.audio_id if audio else None
+
+async def get_audiofile_by_id(db: AsyncSession, audio_id: int):
+    audiofile = await db.get(AudioFile, audio_id)
+    if audiofile is None:
+        raise HTTPException(status_code=404, detail="Audio file not found")
+    return audiofile
+
+async def delete_audiofile(db: AsyncSession, audio_id: int):
+    existing_audiofile = await db.get(AudioFile, audio_id)
+    if existing_audiofile is None:
+        raise HTTPException(status_code=404, detail="Audio file not found")
+    await db.delete(existing_audiofile)
+    await db.commit()
+    return {
+        "File_Name": existing_audiofile.File_Name,
+        "FileType": existing_audiofile.FileType,
+        "Upload_Date": existing_audiofile.Upload_Date
+    }

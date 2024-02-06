@@ -7,13 +7,11 @@ from models.AudioFiles import Base as AudioFiles
 from models.EditHistory import Base as EditHistory 
 from models.EditSession import Base as EditSession  
 from models.Results import Base as Result  
-from models.UserEdits import Base as UserEdits  
 from models.users import Base as users  
 from routers import (
     AudioFiles_route,
     EditHistory_route,
     EditSession_route,
-    UserEdits_route,
     users_route
 )
 
@@ -33,13 +31,11 @@ AudioFiles.metadata.create_all(bind=engine)
 EditHistory.metadata.create_all(bind=engine)
 EditSession.metadata.create_all(bind=engine)
 Result.metadata.create_all(bind=engine)
-UserEdits.metadata.create_all(bind=engine)
 users.metadata.create_all(bind=engine)
 
 # Prefix는 엔드포인트를 정할 때 사용
 app.include_router(users_route.router, prefix="/users", tags=["Users"])
 app.include_router(AudioFiles_route.router, prefix="/files", tags=["Audio Files For Azure"])
-app.include_router(UserEdits_route.router, prefix="/edits", tags=["Edits"])
 app.include_router(EditHistory_route.router, prefix="/historys", tags=["Historys"])
 app.include_router(EditSession_route.router, prefix="/sessions", tags=["Sessions"])
 

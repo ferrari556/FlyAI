@@ -1,8 +1,7 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from config.database import Base
 from pydantic import BaseModel
-from typing import Optional, List
 from datetime import datetime
 
 class EditHistory(Base):
@@ -32,6 +31,12 @@ class HistoryCreate(BaseModel):
 class EditText(BaseModel):
     session_id : int
     result_id : int
+    audio_id : int
     Edited_Text : str
+    
+class EditEffect(BaseModel):
+    session_id : int
+    result_id : int
+    audio_id : int    
     
     
