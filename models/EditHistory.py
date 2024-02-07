@@ -28,6 +28,12 @@ class HistoryCreate(BaseModel):
     Original_Text: str
     Edited_Text : str
     
+class HistoryResponse(BaseModel):
+    session_id: int
+    result_id: int
+    audio_id: int
+    EditDate : datetime
+        
 class EditText(BaseModel):
     session_id : int
     result_id : int

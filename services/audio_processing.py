@@ -120,7 +120,9 @@ class AudioProcessor:
 
         with open(file_path, "rb") as data:
             blob_client.upload_blob(data, overwrite=True)
-        
+            
+        # 업로드된 파일의 URL을 반환
+        return blob_client.url        
         
     def process_audio(self):
 
@@ -137,10 +139,21 @@ class AudioProcessor:
         meanc = self._critria_mean(y_a)
         dur_mean = self._all_duration(y_a, medc)  #0.05
         # mind_meanc = np.max(dur_mean)
+        
+        # 업로드된 파일들의 Azure Blob URL을 저장할 리스트
+        blob_urls = []
 
         segment_paths = self._split_and_save(meanc, 16000)
-        # 분할된 파일들을 Azure Blob Storage에 업로드합니다.
+        
+        # 분할된 파일들을 Azure Blob Storage에 업로드하고 Blob 경로를 반환합니다.
         for segment_path in segment_paths:
-            self.upload_file_to_azure(segment_path)
+            blob_url = self.upload_file_to_azure(segment_path)
+            blob_urls.append(blob_url)  # URL을 리스트에 추가
 
-        return segment_paths
+        return blob_urls  # URL 리스트 반환
+     
+        # # 분할된 파일들을 Azure Blob Storage에 업로드하고 로컬 경로를 반환합니다.
+        # for segment_path in segment_paths:
+        #     self.upload_file_to_azure(segment_path)
+
+        # return segment_paths
