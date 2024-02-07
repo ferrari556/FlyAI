@@ -1,4 +1,4 @@
-from models.EditHistory import EditText, EditEffect
+from models.EditHistory import EditText, EditEffect, HistoryResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
@@ -21,7 +21,7 @@ router = APIRouter()
 
 router = APIRouter()
 
-@router.get("/read/{history_id}")
+@router.get("/read/{history_id}", response_model = HistoryResponse)
 async def get_history_by_id(history_id: int, db: AsyncSession = Depends(get_db)):
     history = await get_edithistory_by_id(db, history_id)
     if history is None:

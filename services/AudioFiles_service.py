@@ -52,8 +52,14 @@ async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: i
     if existing_audiofile:
         raise ValueError("File Name Already Used")
 
+    output_dir = f"./tmp"
+    
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+        
     # 로컬 경로에 파일 임시 저장
     temp_file_path = f"./tmp/{File_Name}"
+    
     with open(temp_file_path, 'wb') as temp_file:
         temp_file.write(file_data)
 

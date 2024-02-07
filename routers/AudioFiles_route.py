@@ -26,7 +26,7 @@ async def read_audiofile(audio_id: int, db: AsyncSession = Depends(get_db)):
 async def remove_audiofile(audio_id: int, db: AsyncSession = Depends(get_db)):
     return await delete_audiofile(db, audio_id)
 
-@router.post("/upload", status_code=200)
+@router.post("/upload")
 async def create_upload_file(request: Request, file: UploadFile, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     login_id = await get_current_user_authorization(request, token)
     user_id = await get_user_id_by_login_id(db, login_id)

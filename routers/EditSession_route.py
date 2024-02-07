@@ -16,14 +16,6 @@ from services.EditSession_service import (
     get_session)
 
 router = APIRouter()
-
-@router.get("/read", response_model=SessionResponse)
-async def get_session(user_id: int, session_id: int, db: AsyncSession = Depends(get_db)):
-    try:
-        session_data = await get_session(user_id, session_id, db)
-        return session_data
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
     
 # 세션 읽기
 @router.get("/read", response_model=SessionResponse)
@@ -51,11 +43,11 @@ async def start(request: Request, token: str = Depends(oauth2_scheme), session_s
 async def pause(session_id: int, db: AsyncSession = Depends(get_db)):
     return await pause_session(db, session_id)
 
-@router.post("/end/{session_id}")
+@router.post("/end/{session_id}", response_model=SessionResponse)
 async def end(session_id: int, db: AsyncSession = Depends(get_db)):
     return await end_session(db, session_id)
 
-@router.patch("/resume/{session_id}")
+@router.patch("/resume/{session_id}", response_model=SessionResponse)
 async def resume(session_id: int, db: AsyncSession = Depends(get_db)):
     try:
         response_data = await resume_session(db, session_id)
