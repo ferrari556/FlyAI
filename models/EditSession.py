@@ -3,28 +3,28 @@ from sqlalchemy.orm import relationship
 from config.database import Base
 from pydantic import BaseModel
 from datetime import datetime
+from typing import Optional
 
 class EditSession(Base):
-    __tablename__ = 'EditSession'
+    __tablename__ = 'editsession'
     session_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('User.user_id'))
-    audio_id = Column(Integer, ForeignKey('AudioFile.audio_id'))
+    user_id = Column(Integer, ForeignKey('user.user_id'))
+    audio_id = Column(Integer, ForeignKey('audiofile.audio_id'))
+    Last_Edit_result_id = Column(Integer, ForeignKey('result.result_id'), nullable=True)
     Start_Edit = Column(DateTime, nullable=False)
     End_Edit = Column(DateTime, nullable=True)
     Session_State = Column(String(50), nullable=False)
-    last_edit_history_id = Column(Integer, ForeignKey('EditHistory.history_id'), nullable=True)
     
-    # 1:N 관계 설정
-    user = relationship("User")
-    audio_file = relationship("AudioFile")
-    edit_history = relationship("EditHistory", foreign_keys=[last_edit_history_id])
-    
-class SessionRead(BaseModel):
-    session_id : int
-    user_id : int
-    
+    # Relationship
+    user = relationship("User", back_populates="editsession")
+    audiofile = relationship("AudioFile", back_populates="editsession")
+    edithistory = relationship("EditHistory", back_populates="session")
+
 class SessionResponse(BaseModel):
     session_id : int
+    user_id : int
+    audio_id : int
+    Last_Edit_result_id: Optional[int] = None
     Start_Edit : datetime
     Session_State : str
     
@@ -32,10 +32,10 @@ class SessionCreate(BaseModel):
     audio_id: int
 
 class SessionUpdate(BaseModel):
-    last_edit_history_id: int
+    Last_Edit_result_id: Optional[int] = None
 
 class SessionPause(BaseModel):
     session_id : int
     End_Edit : datetime
     Session_State : str
-    last_edit_history_id : int
+    Last_Edit_result_id: Optional[int] = None

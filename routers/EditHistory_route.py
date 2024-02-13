@@ -39,11 +39,11 @@ async def edit_history(request: EditText, db: AsyncSession = Depends(get_db)):
     return new_history
 
 @router.post("/apply")
-async def apply_history_effect(request : EditEffect, db: AsyncSession = Depends(get_db)):  # 예시에서 EditText를 재사용
+async def apply_history_effect(request : EditEffect, db: AsyncSession = Depends(get_db)): 
     new_history = await apply_effect(db, request)
     return new_history
 
 @router.post("/cancel")
-async def cancel_history_effect(request : EditEffect, db: AsyncSession = Depends(get_db)):  # EditText를 재사용하거나 적절한 모델 사용
+async def cancel_history_effect(request : EditEffect, db: AsyncSession = Depends(get_db)):  
     new_history = await cancel_effect(db, request)
     return new_history

@@ -1,5 +1,4 @@
 from models.EditSession import EditSession, SessionCreate, SessionResponse, SessionPause
-from models.Results import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException, Request, Body
 from config.database import get_db
@@ -12,8 +11,7 @@ from services.EditSession_service import (
     start_session, 
     pause_session, 
     end_session, 
-    resume_session,
-    get_session)
+    resume_session)
 
 router = APIRouter()
     
@@ -21,7 +19,7 @@ router = APIRouter()
 @router.get("/read", response_model=SessionResponse)
 async def get_session(user_id: int, session_id: int, db: AsyncSession = Depends(get_db)):
     session = await db.execute(
-        select(EditSession).filter_by(user_id=user_id, session_id=session_id)
+        select(EditSession).filter_by(session_id=session_id)
     )
     session_data = session.scalars().first()
     if session_data:
@@ -47,7 +45,7 @@ async def pause(session_id: int, db: AsyncSession = Depends(get_db)):
 async def end(session_id: int, db: AsyncSession = Depends(get_db)):
     return await end_session(db, session_id)
 
-@router.patch("/resume/{session_id}", response_model=SessionResponse)
+@router.patch("/resume/{session_id}")
 async def resume(session_id: int, db: AsyncSession = Depends(get_db)):
     try:
         response_data = await resume_session(db, session_id)

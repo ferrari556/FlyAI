@@ -152,8 +152,3 @@ class AudioProcessor:
 
         return blob_urls  # URL 리스트 반환
      
-        # # 분할된 파일들을 Azure Blob Storage에 업로드하고 로컬 경로를 반환합니다.
-        # for segment_path in segment_paths:
-        #     self.upload_file_to_azure(segment_path)
-
-        # return segment_paths

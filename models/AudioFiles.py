@@ -5,18 +5,20 @@ from pydantic import BaseModel
 from datetime import datetime
 
 class AudioFile(Base):
-    __tablename__ = 'AudioFile'
+    __tablename__ = 'audiofile'
     audio_id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey('User.user_id'))
+    user_id = Column(Integer, ForeignKey('user.user_id'))
     File_Name = Column(String(255), nullable=False)
     FilePath = Column(String(255), nullable=False)
     File_Length = Column(Float, nullable=False)
     FileType = Column(String(50), nullable=False)
     Upload_Date = Column(DateTime, nullable=False)
     File_Status = Column(String(50), nullable=False)
-    
-    # 1:N 관계 설정
-    user = relationship("User")
+
+    # Relationship
+    user = relationship("User", back_populates="audiofile")
+    result = relationship("Result", back_populates="audiofile")
+    editsession = relationship("EditSession", back_populates="audiofile")
 
 class AudioResponse(BaseModel):
     audio_id : int

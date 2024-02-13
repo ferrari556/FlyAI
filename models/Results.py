@@ -5,14 +5,18 @@ from pydantic import BaseModel
 from datetime import datetime
 
 class Result(Base):
-    __tablename__ = 'Result'
+    __tablename__ = 'result'
     result_id = Column(Integer, primary_key=True)
-    audio_id = Column(Integer, ForeignKey('AudioFile.audio_id'))
+    audio_id = Column(Integer, ForeignKey('audiofile.audio_id'))
     Index = Column(Integer, nullable=False)
     Converted_Result = Column(String(255), nullable=False)
-    Is_Text = Column(Boolean, nullable=False)
-    EffectFilePath = Column(String(255), nullable=False)
+    ResultFilePath = Column(String(255), nullable=False)
     Converted_Date = Column(DateTime, nullable=False)
+    # Is_Text = Column(Boolean, nullable=False)
     
-    # 1:N 관계 설정
-    audio_file = relationship("AudioFile")
+    # Relationship
+    audiofile = relationship("AudioFile", back_populates="result")
+    effectsound = relationship("EffectSound", back_populates="result")
+    edithistory = relationship("EditHistory", back_populates="result")
+    
+

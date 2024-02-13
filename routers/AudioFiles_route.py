@@ -1,7 +1,7 @@
-from models.AudioFiles import AudioFile, AudioDelete, AudioRead
+from models.AudioFiles import AudioResponse, AudioDelete
 from models.AudioFiles import AudioResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, Request, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, Request
 from datetime import datetime
 from fastapi.responses import JSONResponse
 from config.database import get_db
@@ -17,7 +17,7 @@ from services.AudioFiles_service import (
 router = APIRouter()
 
 # audio_id로 파일 읽기
-@router.get("/read/{audio_id}", response_model=AudioRead)
+@router.get("/read/{audio_id}", response_model=AudioResponse)
 async def read_audiofile(audio_id: int, db: AsyncSession = Depends(get_db)):
     return await get_audiofile_by_id(db, audio_id)
 

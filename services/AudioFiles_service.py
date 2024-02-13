@@ -37,8 +37,7 @@ async def split_and_save_results(db : AsyncSession, audio_id: int, segments_info
             audio_id=audio_id,
             Index=index+1,
             Converted_Result="X",
-            Is_Text=False,
-            EffectFilePath=segment_path,
+            ResultFilePath=segment_path,
             Converted_Date=datetime.datetime.now()
         )
         db.add(result)

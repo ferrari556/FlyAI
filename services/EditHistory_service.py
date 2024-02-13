@@ -17,6 +17,35 @@ async def get_edithistory_by_id(db: AsyncSession, history_id: int):
         raise HTTPException(status_code=404, detail="EditHistory not found")
     return history
 
+# 편집 기록 생성 및 세션 업데이트
+async def create_edit_history_and_update_session(
+        db: AsyncSession, session_id: int, result_id: int, edit_action: str = "", 
+        original_text: str = "",edited_text: str = "", effect_sound_id: int = None):
+    
+    # 편집 이력 생성
+    new_history = EditHistory(
+        session_id=session_id,
+        result_id=result_id,
+        Edit_Action=edit_action,
+        Original_Text=original_text,
+        Edited_Text=edited_text,
+        Effect_Sound_ID=effect_sound_id,
+        EditDate=created_at_kst
+    )
+    db.add(new_history)
+    await db.commit()
+    await db.refresh(new_history)
+
+    # 세션 업데이트
+    edit_session = await db.get(EditSession, session_id)
+    if edit_session:
+        edit_session.Last_Edit_result_id = new_history.result_id  # 마지막 편집 결과 ID 업데이트
+        await db.commit()
+    else:
+        raise HTTPException(status_code=404, detail="EditSession not found")
+
+    return new_history
+
 # 편집 기록 삭제
 async def delete_edithistory(db: AsyncSession, history_id: int):
     existing_history = await db.get(EditHistory, history_id)
@@ -35,7 +64,6 @@ async def edit_text(db: AsyncSession, request: EditText):
     new_history = EditHistory(
         session_id=request.session_id,
         result_id=request.result_id,
-        audio_id=result.audio_id,
         Edit_Action="Convert Text",
         Original_Text=result.Converted_Result,
         Edited_Text=request.Edited_Text,
@@ -46,12 +74,11 @@ async def edit_text(db: AsyncSession, request: EditText):
     await db.commit()
     await db.refresh(new_history)
 
+     # EditSession 업데이트
     edit_session = await db.get(EditSession, request.session_id)
-    if not edit_session:
-        raise HTTPException(status_code=404, detail="Session not found")
-
-    edit_session.last_edit_history_id = new_history.history_id
-    await db.commit()
+    if edit_session:
+        edit_session.Last_Edit_result_id = request.result_id
+        await db.commit()
 
     return new_history
 
@@ -62,7 +89,6 @@ async def apply_effect(db: AsyncSession, request : EditEffect):
     new_history = EditHistory(
         session_id=request.session_id,
         result_id=result.result_id,
-        audio_id=request.audio_id,
         Original_Text=result.Converted_Result,
         Edited_Text=result.Converted_Result,
         Edit_Action="Apply Effect",
@@ -73,12 +99,11 @@ async def apply_effect(db: AsyncSession, request : EditEffect):
     await db.commit()
     await db.refresh(new_history)
 
+    # EditSession 업데이트
     edit_session = await db.get(EditSession, request.session_id)
-    if not edit_session:
-        raise HTTPException(status_code=404, detail="Session not found")
-
-    edit_session.last_edit_history_id = new_history.history_id
-    await db.commit()
+    if edit_session:
+        edit_session.Last_Edit_result_id = request.result_id
+        await db.commit()
 
     return new_history
 
@@ -90,7 +115,6 @@ async def cancel_effect(db: AsyncSession, request : EditEffect):
     new_history = EditHistory(
         session_id=request.session_id,
         result_id=result.result_id,
-        audio_id=request.audio_id,
         Original_Text=result.Converted_Result,
         Edited_Text=result.Converted_Result,
         Edit_Action="Cancel Effect",
@@ -101,12 +125,11 @@ async def cancel_effect(db: AsyncSession, request : EditEffect):
     await db.commit()
     await db.refresh(new_history)
 
+    # EditSession 업데이트
     edit_session = await db.get(EditSession, request.session_id)
-    if not edit_session:
-        raise HTTPException(status_code=404, detail="Session not found")
-
-    edit_session.last_edit_history_id = new_history.history_id
-    await db.commit()
+    if edit_session:
+        edit_session.Last_Edit_result_id = request.result_id
+        await db.commit()
 
     return new_history
 
