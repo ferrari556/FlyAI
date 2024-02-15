@@ -19,8 +19,6 @@ created_at_kst = datetime.now(korea_time_zone)
     
 router = APIRouter()
 
-router = APIRouter()
-
 @router.get("/read/{history_id}", response_model = HistoryResponse)
 async def get_history_by_id(history_id: int, db: AsyncSession = Depends(get_db)):
     history = await get_edithistory_by_id(db, history_id)

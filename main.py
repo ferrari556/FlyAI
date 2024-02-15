@@ -22,10 +22,8 @@ engine = create_engine(DatabaseURL)
 
 app = FastAPI()
 
-
 # API 암호화
 setup_cors(app)
-# app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # 원하는 데이터베이스 생성
 AudioFiles.metadata.create_all(bind=engine)

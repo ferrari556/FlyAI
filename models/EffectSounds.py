@@ -14,3 +14,8 @@ class EffectSound(Base):
     
     result = relationship("Result", back_populates="effectsound")
     
+class EffectSoundCreate(BaseModel):
+    result_id: int
+    Effect_Name: str
+    EffectFilePath: str
+    

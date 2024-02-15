@@ -24,7 +24,6 @@ def get_password_hash(password):
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
-# 토큰 만들기
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(days=1)
@@ -32,6 +31,35 @@ def create_access_token(data: dict):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
     return encoded_jwt
+
+def create_refresh_token(data: dict, expires_delta: timedelta = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(days=30)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+# 토큰 리프레쉬
+async def refresh_access_token(db: AsyncSession, refresh_token: str):
+    credentials_exception = HTTPException(
+        status_code=401, detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=ALGORITHM)
+        login_id: str = payload.get("sub")
+        if login_id is None:
+            raise credentials_exception
+        user = await get_user_by_login_id(db, login_id)
+        if user is None:
+            raise credentials_exception
+        access_token = create_access_token(data={"sub": user.login_id})
+        return access_token
+    except jwt.PyJWTError:
+        raise credentials_exception
 
 async def get_user_by_login_id(db: AsyncSession, login_id: str):
     result = await db.execute(select(User).filter_by(login_id=login_id))
@@ -78,7 +106,7 @@ async def get_current_user_authorization(request: Request, token : str):
     token = authorization.replace("Bearer ", "")
     
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=ALGORITHM)
         login_id = payload.get("sub")
         if login_id is None:
             raise HTTPException(status_code=401, detail="Invalid Token")

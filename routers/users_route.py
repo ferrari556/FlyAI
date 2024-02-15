@@ -10,7 +10,9 @@ from services.Login_Service import (
     get_user_by_login_id,
     create_user,
     authenticate_user,
-    create_access_token
+    create_access_token,
+    refresh_access_token,
+    create_refresh_token
 )
 
 router = APIRouter()
@@ -56,7 +58,13 @@ async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
     
     access_token = create_access_token({"sub": db_user.login_id})
-    return {"login_id": db_user.login_id, "access_token": access_token, "token_type": "bearer"}
+    refresh_token = create_refresh_token(data={"sub": db_user.login_id})
+    
+    return {"login_id": db_user.login_id,
+            "access_token": access_token,
+            "refresh_token": refresh_token, 
+            "token_type": "bearer"
+            }
 
 # FastAPI 내에서 테스트를 하기 위한 API
 @router.post("/test")
@@ -68,5 +76,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     access_token = create_access_token({"sub": db_user.login_id})
     return {"login_id" : db_user.login_id, "access_token": access_token, "token_type": "bearer"}
 
-
+@router.post("/refresh")
+async def refresh_token_endpoint(refresh_token: str, db: AsyncSession = Depends(get_db)):
+    new_access_token = await refresh_access_token(db, refresh_token)
+    return {"access_token": new_access_token, "token_type": "bearer"}
     
