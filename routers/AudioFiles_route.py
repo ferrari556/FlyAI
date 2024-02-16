@@ -11,7 +11,8 @@ from services.AudioFiles_service import (
     downloadfromazure, 
     get_user_id_by_login_id, 
     get_audiofile_by_id, 
-    delete_audiofile
+    delete_audiofile,
+    combine_audio_files
 )
 
 router = APIRouter()
@@ -61,5 +62,13 @@ async def download_and_save_file(request: Request, File_Name: str, token: str = 
     try:
         db_audio_file = await downloadfromazure(user_id, File_Name, db)
         return db_audio_file
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.post("/finalize/{audio_id}")
+async def finalize_audio(audio_id: int, db: AsyncSession = Depends(get_db)):
+    try:
+        combined_audio_path = await combine_audio_files(db, audio_id)
+        return {"message": "Audio combined successfully", "audio_path": combined_audio_path}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

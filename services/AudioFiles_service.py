@@ -3,7 +3,10 @@ from azure.storage.blob import BlobServiceClient, PublicAccess
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from models.AudioFiles import AudioFile
 from models.users import User
-from models.Results import Result 
+from models.Results import Result
+from models.EditHistory import EditHistory
+from pydub import AudioSegment
+from models.EffectSounds import EffectSounds
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.audio_processing import AudioProcessor
 import pytz, datetime, os, mimetypes, wave, contextlib
@@ -216,3 +219,39 @@ async def delete_audiofile(db: AsyncSession, audio_id: int):
         "FileType": existing_audiofile.FileType,
         "Upload_Date": existing_audiofile.Upload_Date
     }
+    
+async def combine_audio_files(db: AsyncSession, audio_id: int):
+    async with db.begin():
+        # 해당 오디오 ID에 속한 모든 결과 파일을 순서대로 가져옵니다.
+        result_files = await db.execute(
+            select(Result).filter(Result.audio_id == audio_id).order_by(Result.Index)
+        )
+        result_files = result_files.scalars().all()
+
+        # 최종 오디오 파일 초기화
+        combined_audio = AudioSegment.empty()
+
+        for result_file in result_files:
+            audio_segment = AudioSegment.from_file(result_file.ResultFilePath)
+
+            # 해당 result_id에 대한 최신 'Apply Effect' 액션을 가져옵니다.
+            effect_history = await db.execute(
+                select(EditHistory).filter(
+                    EditHistory.result_id == result_file.result_id,
+                    EditHistory.Edit_Action == "Apply Effect"
+                ).order_by(EditHistory.EditDate.desc())
+            )
+            effect_history = effect_history.scalars().first()
+
+            if effect_history:
+                effect_sound = await db.get(EffectSounds, effect_history.effect_sound_id)
+                effect_segment = AudioSegment.from_file(effect_sound.EffectFilePath)
+                audio_segment = audio_segment.overlay(effect_segment)
+
+            combined_audio += audio_segment
+
+        # 합쳐진 오디오 파일을 저장합니다.
+        combined_audio_path = f"final_audio_{audio_id}.mp3"
+        combined_audio.export(combined_audio_path, format="mp3")
+
+        return combined_audio_path
