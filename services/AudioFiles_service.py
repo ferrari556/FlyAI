@@ -6,7 +6,7 @@ from models.users import User
 from models.Results import Result
 from models.EditHistory import EditHistory
 from pydub import AudioSegment
-from models.EffectSounds import EffectSounds
+from models.EffectSounds import EffectSound
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.audio_processing import AudioProcessor
 import pytz, datetime, os, mimetypes, wave, contextlib
@@ -244,7 +244,7 @@ async def combine_audio_files(db: AsyncSession, audio_id: int):
             effect_history = effect_history.scalars().first()
 
             if effect_history:
-                effect_sound = await db.get(EffectSounds, effect_history.effect_sound_id)
+                effect_sound = await db.get(EffectSound, effect_history.effect_sound_id)
                 effect_segment = AudioSegment.from_file(effect_sound.EffectFilePath)
                 audio_segment = audio_segment.overlay(effect_segment)
 
