@@ -1,12 +1,12 @@
 from fastapi import HTTPException
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import BlobServiceClient, PublicAccess
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from models.AudioFiles import AudioFile
 from models.users import User
 from models.Results import Result 
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.audio_processing import AudioProcessor
-import pytz, datetime, os, mimetypes, wave,contextlib
+import pytz, datetime, os, mimetypes, wave, contextlib
 from sqlalchemy.future import select
 from mutagen.mp3 import MP3
 from typing import List
@@ -28,20 +28,28 @@ async def get_audiofile_by_name(db: AsyncSession, user_id: int, File_Name: str):
     return result.scalars().first()
 
 # 분할 파일 데이터베이스에 저장
-async def split_and_save_results(db : AsyncSession, audio_id: int, segments_info: List[str]):
+async def split_and_save_results(db : AsyncSession, audio_id: int, segments_info: List[str], segment_lengths: List[float]):
     if segments_info is None:
         raise ValueError("segments_info is None, which indicates no segments were processed or returned.")
     
-    for index, segment_path in enumerate(segments_info):
+    results = []
+    
+    for index, (segment_path, segment_length) in enumerate(zip(segments_info, segment_lengths)):
+        # 여기에서 segment_length 값을 Result 객체에 저장
         result = Result(
             audio_id=audio_id,
-            Index=index+1,
+            Index=index + 1,
             Converted_Result="X",
             ResultFilePath=segment_path,
+            ResultFileLength=segment_length,  # 세그먼트 길이 저장
             Converted_Date=datetime.datetime.now()
         )
         db.add(result)
+        results.append(result)  # 결과 리스트에 추가
     await db.commit()
+    
+    # 결과 객체의 리스트를 반환
+    return results
     
 # Azure Blob Storage로 분할 파일과 원본 파일 업로드
 async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: int, db: AsyncSession):
@@ -63,16 +71,16 @@ async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: i
         temp_file.write(file_data)
 
     # Azure 연결 문자열 설정
-    container_name = f"test{user_id}"
+    container_name = f"metadata{user_id}"
     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
     blob_client = None
     
     try:
         file_length = get_wav_length(temp_file_path)
         
-        # 컨테이너 생성 (존재하지 않는 경우에만)
+        # 컨테이너 생성 및 공개 접근 수준 설정 (Container 또는 Blob)
         try:
-            blob_service_client.create_container(container_name)
+            blob_service_client.create_container(container_name, public_access=PublicAccess.Container)
         except ResourceExistsError:
             pass
         
@@ -107,15 +115,15 @@ async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: i
 
         container_name = f"processed-audio{user_id}"
         
-        # 컨테이너 생성 (존재하지 않는 경우에만)
+        # 컨테이너 생성 및 공개 접근 수준 설정 (Container 또는 Blob)
         try:
-            blob_service_client.create_container(container_name)
+            blob_service_client.create_container(container_name, public_access=PublicAccess.Container)
         except ResourceExistsError:
             pass
         
         processor = AudioProcessor(audio_file.audio_id, temp_file_path, output_dir, blob_service_client, container_name)
-        segments_info = processor.process_audio()
-        await split_and_save_results(db, audio_file.audio_id, segments_info)
+        segments_info, segment_lengths = processor.process_audio()
+        results = await split_and_save_results(db, audio_file.audio_id, segments_info, segment_lengths)
               
     except Exception as e:
         # blob_client가 초기화되었고, 예외 발생 시 해당 blob 삭제
@@ -131,7 +139,7 @@ async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: i
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
-    return audio_file
+    return results
 
 # Azure에서 파일 다운로드 및 AudioFiles 데이터베이스에 저장
 async def downloadfromazure(user_id: int, File_Name: str, db: AsyncSession):

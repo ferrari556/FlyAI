@@ -18,4 +18,3 @@ class EffectSoundCreate(BaseModel):
     result_id: int
     Effect_Name: str
     EffectFilePath: str
-    

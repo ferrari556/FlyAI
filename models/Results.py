@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float
 from sqlalchemy.orm import relationship
 from config.database import Base
 from pydantic import BaseModel
@@ -11,6 +11,7 @@ class Result(Base):
     Index = Column(Integer, nullable=False)
     Converted_Result = Column(String(255), nullable=False)
     ResultFilePath = Column(String(255), nullable=False)
+    ResultFileLength = Column(Float, nullable=False)
     Converted_Date = Column(DateTime, nullable=False)
     # Is_Text = Column(Boolean, nullable=False)
     

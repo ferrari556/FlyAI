@@ -1,7 +1,16 @@
 from azure.storage.blob import BlobServiceClient
 from pydub import AudioSegment
 import os, librosa, soundfile as sf, numpy as np
+import contextlib, wave
 
+# wav 파일 길이 정보 함수
+def get_wav_length(wav_path):
+    with contextlib.closing(wave.open(wav_path, 'r')) as f:
+        frames = f.getnframes()
+        rate = f.getframerate()
+        duration = frames / float(rate)
+        return duration
+    
 # 오디오 파일 전처리
 class AudioProcessor:
     def __init__(self, id, wav_path, output_dir, blob_service_client: BlobServiceClient, container_name: str):
@@ -68,15 +77,18 @@ class AudioProcessor:
 
         arr, idx = self._split_array(gap, criteria, num)
         segment_paths = []
+        segment_lengths = []
         
         for i in range(len(idx)-1):
             start_sample = idx[i]
             end_sample = idx[i+1]
-            segment_path = f"{self.output_dir}/{self.id}_{i}.wav"  # Define the path for this segment
+            segment_path = f"{self.output_dir}/{self.id}_{i+1}.wav"  # Define the path for this segment
+            segment_length = get_wav_length(segment_path)
             sf.write(segment_path, y[start_sample:end_sample], sr)  # Save the segment
             segment_paths.append(segment_path)  # Add the path to the list
+            segment_lengths.append(segment_length)
 
-        return segment_paths  # Return the list of paths
+        return segment_paths, segment_lengths  # Return the list of paths
 
     def _critria_mean(self, y):
         filtered_values = y[y <= 0.01]
@@ -143,12 +155,12 @@ class AudioProcessor:
         # 업로드된 파일들의 Azure Blob URL을 저장할 리스트
         blob_urls = []
 
-        segment_paths = self._split_and_save(meanc, 16000)
+        segment_paths, segment_lengths = self._split_and_save(meanc, 16000)
         
         # 분할된 파일들을 Azure Blob Storage에 업로드하고 Blob 경로를 반환합니다.
         for segment_path in segment_paths:
             blob_url = self.upload_file_to_azure(segment_path)
             blob_urls.append(blob_url)  # URL을 리스트에 추가
 
-        return blob_urls  # URL 리스트 반환
+        return blob_urls, segment_lengths  # URL 리스트 반환
      

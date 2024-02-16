@@ -33,18 +33,24 @@ async def create_upload_file(request: Request, file: UploadFile, token: str = De
     if user_id is None:
         raise HTTPException(status_code=404, detail="User not found")
     file_data = await file.read()
-    audio_file = await uploadtoazure(file.filename, file.content_type, file_data, user_id, db)
-   
-    return JSONResponse(status_code=200, content={
-        "audio_id": audio_file.audio_id,
-        "File_Name": audio_file.File_Name,
-        "FilePath": audio_file.FilePath,
-        "File_Length": audio_file.File_Length,
-        "FileType": audio_file.FileType,
-        "Upload_Date": audio_file.Upload_Date.isoformat(),  # datetime 객체는 ISO 포맷으로 변환
-        "File_Status": audio_file.File_Status
-    })
+
+    # uploadtoazure 함수가 완료될 때까지 기다립니다.
+    results = await uploadtoazure(file.filename, file.content_type, file_data, user_id, db)
     
+    # uploadtoazure 함수가 반환한 결과로부터 results_data를 생성합니다.
+    results_data = [{
+        "result_id": result.result_id,
+        "audio_id": result.audio_id,
+        "Index": result.Index,
+        "Converted_Result": result.Converted_Result,
+        "ResultFilePath": result.ResultFilePath,
+        "ResultFileLength": result.ResultFileLength,
+        "Converted_Date": result.Converted_Date.isoformat(),  # datetime 객체 ISO 포맷으로 변환
+    } for result in results]
+
+    # 생성된 results_data로 JSONResponse 객체를 생성합니다.
+    return JSONResponse(status_code=200, content={"results": results_data})
+
 # Azure Blob Storage에서 파일 다운로드   
 @router.post("/download", response_model = AudioResponse)
 async def download_and_save_file(request: Request, File_Name: str, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):

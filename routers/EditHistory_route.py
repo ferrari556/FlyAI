@@ -1,4 +1,4 @@
-from models.EditHistory import EditText, EditEffect, HistoryResponse
+from models.EditHistory import EditText, EditEffect, HistoryResponse, EditEffect
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
@@ -8,7 +8,7 @@ from datetime import datetime
 from services.EditHistory_service import (
     get_edithistory_by_id, 
     delete_edithistory, 
-    edit_text, 
+    # edit_text, 
     apply_effect, 
     cancel_effect
 )
@@ -31,10 +31,10 @@ async def delete_history(history_id: int, db: AsyncSession = Depends(get_db)):
     await delete_edithistory(db, history_id)
     return {"message": "EditHistory deleted"}
 
-@router.post("/edit-text")
-async def edit_history(request: EditText, db: AsyncSession = Depends(get_db)):
-    new_history = await edit_text(db, request)
-    return new_history
+# @router.post("/edit-text")
+# async def edit_history(request: EditText, db: AsyncSession = Depends(get_db)):
+#     new_history = await edit_text(db, request)
+#     return new_history
 
 @router.post("/apply")
 async def apply_history_effect(request : EditEffect, db: AsyncSession = Depends(get_db)): 

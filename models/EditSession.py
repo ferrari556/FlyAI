@@ -18,7 +18,7 @@ class EditSession(Base):
     # Relationship
     user = relationship("User", back_populates="editsession")
     audiofile = relationship("AudioFile", back_populates="editsession")
-    edithistory = relationship("EditHistory", back_populates="session")
+    # edithistory = relationship("EditHistory", back_populates="session")
 
 class SessionResponse(BaseModel):
     session_id : int
