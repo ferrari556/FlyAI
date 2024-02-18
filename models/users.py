@@ -13,7 +13,6 @@ class User(Base):
 
     # Relationship
     audiofile = relationship("AudioFile", back_populates="user")
-    editsession = relationship("EditSession", back_populates="user")
     
 class UserLogin(BaseModel):
     login_id: str

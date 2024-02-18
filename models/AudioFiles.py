@@ -18,7 +18,6 @@ class AudioFile(Base):
     # Relationship
     user = relationship("User", back_populates="audiofile")
     result = relationship("Result", back_populates="audiofile")
-    editsession = relationship("EditSession", back_populates="audiofile")
 
 class AudioResponse(BaseModel):
     audio_id : int

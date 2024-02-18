@@ -83,13 +83,13 @@ class AudioProcessor:
             start_sample = idx[i]
             end_sample = idx[i+1]
             segment_path = f"{self.output_dir}/{self.id}_{i+1}.wav"  # Define the path for this segment
-            segment_length = get_wav_length(segment_path)
             sf.write(segment_path, y[start_sample:end_sample], sr)  # Save the segment
+            segment_length = get_wav_length(segment_path)
             segment_paths.append(segment_path)  # Add the path to the list
             segment_lengths.append(segment_length)
-
+        
         return segment_paths, segment_lengths  # Return the list of paths
-
+        
     def _critria_mean(self, y):
         filtered_values = y[y <= 0.01]
         average_value = np.mean(filtered_values)

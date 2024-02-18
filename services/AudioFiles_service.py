@@ -1,18 +1,15 @@
 from fastapi import HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from azure.storage.blob import BlobServiceClient, PublicAccess
 from azure.core.exceptions import ResourceExistsError, ResourceNotFoundError
 from models.AudioFiles import AudioFile
 from models.users import User
 from models.Results import Result
-from models.EditHistory import EditHistory
-from pydub import AudioSegment
-from models.EffectSounds import EffectSound
-from sqlalchemy.ext.asyncio import AsyncSession
-from services.audio_processing import AudioProcessor
-import pytz, datetime, os, mimetypes, wave, contextlib
-from sqlalchemy.future import select
+import pytz, datetime, os, mimetypes, wave, contextlib, shutil
 from mutagen.mp3 import MP3
 from typing import List
+from services.audio_processing import AudioProcessor
 
 
 connect_str = "DefaultEndpointsProtocol=https;AccountName=ferrari556;AccountKey=g8BUEJyJPPinwIYo7QPyAZql3SHflcOXQHFfBSqWijNdor0uC3+2MFslBA16+AnoVvrT1G93xUQe+AStXt7N4g==;EndpointSuffix=core.windows.net"
@@ -62,11 +59,13 @@ async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: i
     if existing_audiofile:
         raise ValueError("File Name Already Used")
 
-    output_dir = f"./tmp"
+    # tmp 루트 폴더 경로
+    temp_file_path2 = f"./tmp"
     
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-        
+    if not os.path.exists(temp_file_path2):
+        os.makedirs(temp_file_path2)
+    
+    
     # 로컬 경로에 파일 임시 저장
     temp_file_path = f"./tmp/{File_Name}"
     
@@ -110,6 +109,9 @@ async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: i
         await db.commit()
         await db.refresh(audio_file)
         
+        # 오디오 루트 파일 경로
+        output_dir2 = f"./processed_audio"
+        
         # 오디오 파일 처리
         output_dir = f"./processed_audio/user{user_id}"
         
@@ -132,15 +134,19 @@ async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: i
         # blob_client가 초기화되었고, 예외 발생 시 해당 blob 삭제
         if blob_client:
             try:
-                await blob_client.delete_blob()  # blob 삭제 시도
+                blob_client.delete_blob()  # blob 삭제 시도
             except Exception as delete_error:
                 print(f"Failed to delete blob: {delete_error}")
         raise e  # 원래 발생한 예외 다시 발생시킴
 
     finally:
-        # 함수 종료 전에 임시 파일 삭제
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
+        # 모든 처리가 완료된 후 디렉토리 삭제
+        if os.path.exists(temp_file_path2):
+            shutil.rmtree(temp_file_path2)
+        
+        # 모든 처리가 완료된 후 디렉토리 삭제
+        if os.path.exists(output_dir2):
+            shutil.rmtree(output_dir2)
 
     return results
 
@@ -189,25 +195,29 @@ async def downloadfromazure(user_id: int, File_Name: str, db: AsyncSession):
     except Exception as e:
         # 다른 예외 발생 시 처리
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+# 오디오 파일 조회 함수
 async def get_user_id_by_login_id(db: AsyncSession, login_id: str):
     result = await db.execute(select(User).filter_by(login_id=login_id))
     user = result.scalar_one_or_none()
     return user.user_id if user else None
 
+# 오디오 파일 조회 함수
 async def get_audio_id_by_user_id(db: AsyncSession, user_id: int):
     result = await db.execute(
         select(AudioFile).where(AudioFile.user_id == user_id).order_by(AudioFile.audio_id.desc()).limit(1)
     )
-    audio = result.scalar_one_or_none()  # 여기서는 first()를 사용해 첫 번째 결과만 가져옵니다.
+    audio = result.scalar_one_or_none()
     return audio.audio_id if audio else None
 
+# 오디오 파일 조회 함수
 async def get_audiofile_by_id(db: AsyncSession, audio_id: int):
     audiofile = await db.get(AudioFile, audio_id)
     if audiofile is None:
         raise HTTPException(status_code=404, detail="Audio file not found")
     return audiofile
 
+# 오디오 파일 삭제 함수
 async def delete_audiofile(db: AsyncSession, audio_id: int):
     existing_audiofile = await db.get(AudioFile, audio_id)
     if existing_audiofile is None:
@@ -220,38 +230,3 @@ async def delete_audiofile(db: AsyncSession, audio_id: int):
         "Upload_Date": existing_audiofile.Upload_Date
     }
     
-async def combine_audio_files(db: AsyncSession, audio_id: int):
-    async with db.begin():
-        # 해당 오디오 ID에 속한 모든 결과 파일을 순서대로 가져옵니다.
-        result_files = await db.execute(
-            select(Result).filter(Result.audio_id == audio_id).order_by(Result.Index)
-        )
-        result_files = result_files.scalars().all()
-
-        # 최종 오디오 파일 초기화
-        combined_audio = AudioSegment.empty()
-
-        for result_file in result_files:
-            audio_segment = AudioSegment.from_file(result_file.ResultFilePath)
-
-            # 해당 result_id에 대한 최신 'Apply Effect' 액션을 가져옵니다.
-            effect_history = await db.execute(
-                select(EditHistory).filter(
-                    EditHistory.result_id == result_file.result_id,
-                    EditHistory.Edit_Action == "Apply Effect"
-                ).order_by(EditHistory.EditDate.desc())
-            )
-            effect_history = effect_history.scalars().first()
-
-            if effect_history:
-                effect_sound = await db.get(EffectSound, effect_history.effect_sound_id)
-                effect_segment = AudioSegment.from_file(effect_sound.EffectFilePath)
-                audio_segment = audio_segment.overlay(effect_segment)
-
-            combined_audio += audio_segment
-
-        # 합쳐진 오디오 파일을 저장합니다.
-        combined_audio_path = f"final_audio_{audio_id}.mp3"
-        combined_audio.export(combined_audio_path, format="mp3")
-
-        return combined_audio_path

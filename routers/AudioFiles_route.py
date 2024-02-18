@@ -2,7 +2,6 @@ from models.AudioFiles import AudioResponse, AudioDelete
 from models.AudioFiles import AudioResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, Request
-from datetime import datetime
 from fastapi.responses import JSONResponse
 from config.database import get_db
 from services.Login_Service import get_current_user_authorization, oauth2_scheme
@@ -12,7 +11,6 @@ from services.AudioFiles_service import (
     get_user_id_by_login_id, 
     get_audiofile_by_id, 
     delete_audiofile,
-    combine_audio_files
 )
 
 router = APIRouter()
@@ -62,13 +60,5 @@ async def download_and_save_file(request: Request, File_Name: str, token: str = 
     try:
         db_audio_file = await downloadfromazure(user_id, File_Name, db)
         return db_audio_file
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
-@router.post("/finalize/{audio_id}")
-async def finalize_audio(audio_id: int, db: AsyncSession = Depends(get_db)):
-    try:
-        combined_audio_path = await combine_audio_files(db, audio_id)
-        return {"message": "Audio combined successfully", "audio_path": combined_audio_path}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

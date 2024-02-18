@@ -13,11 +13,10 @@ class Result(Base):
     ResultFilePath = Column(String(255), nullable=False)
     ResultFileLength = Column(Float, nullable=False)
     Converted_Date = Column(DateTime, nullable=False)
-    # Is_Text = Column(Boolean, nullable=False)
     
     # Relationship
     audiofile = relationship("AudioFile", back_populates="result")
-    effectsound = relationship("EffectSound", back_populates="result")
+    effectsound = relationship("EffectSounds", back_populates="result")
     edithistory = relationship("EditHistory", back_populates="result")
     
 

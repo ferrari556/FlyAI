@@ -7,18 +7,14 @@ from datetime import datetime
 class EditHistory(Base):
     __tablename__ = 'edithistory'
     history_id = Column(Integer, primary_key=True)
-    # session_id = Column(Integer, ForeignKey('editsession.session_id'))
     result_id = Column(Integer, ForeignKey('result.result_id'))
     effect_sound_id = Column(Integer, ForeignKey('effectsound.effect_sound_id'), nullable=True) 
     Edit_Action = Column(String(30), nullable=False)
-    # Original_Text = Column(String(255), nullable=True)
-    # Edited_Text = Column(String(255), nullable=True)
     EditDate = Column(DateTime, server_default=func.now())
     
     # Relationship
-    # session = relationship("EditSession", back_populates="edithistory")
     result = relationship("Result", back_populates="edithistory")
-    effectsound = relationship("EffectSound")
+    effectsound = relationship("EffectSounds")
     
 class HistoryCreate(BaseModel):
     # session_id: int
