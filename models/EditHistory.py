@@ -17,21 +17,14 @@ class EditHistory(Base):
     effectsound = relationship("EffectSounds")
     
 class HistoryCreate(BaseModel):
-    # session_id: int
     result_id: int
     Edit_Action: str
-    # Original_Text: str
-    # Edited_Text : str
     
 class HistoryResponse(BaseModel):
     history_id : int
     result_id: int
     effect_sound_id : int
     EditDate : datetime
-        
-class EditText(BaseModel):
-    result_id : int
-    Edited_Text : str
     
 class EditEffect(BaseModel):
     result_id : int 

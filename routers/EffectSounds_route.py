@@ -48,7 +48,7 @@ async def finalize_audio(audio_id: int, db: AsyncSession = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
 
 # 유저에게 실시간으로 효과음 합성된 오디오 파일 들려주기
-@router.websocket("/ws/effects")
+@router.websocket("/ws-interaction")
 async def websocket_endpoint(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
     await websocket.accept()
     try:

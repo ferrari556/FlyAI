@@ -27,6 +27,7 @@ class AudioResponse(BaseModel):
     File_Status : str
     
 class AudioDelete(BaseModel):
+    audio_id : int
     File_Name : str
     FileType : str
     Upload_Date : datetime

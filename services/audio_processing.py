@@ -24,7 +24,6 @@ class AudioProcessor:
         audSeg = AudioSegment.from_mp3(self.wav_path)
         audSeg.export(self.wav_path, format="wav")
 
-
     def _split_array(self, arr, c, n):
         result_arr = []
         result_idx = [0,]
@@ -95,34 +94,6 @@ class AudioProcessor:
         average_value = np.mean(filtered_values)
         return average_value
 
-    def _critria_med(self, y):
-        filtered_values = y[y <= 0.01]
-        max_value = np.median(filtered_values)
-        return max_value
-
-    def _all_duration(self, arr, c):
-        res_dur = []
-        current_group = []
-        count = 1
-        s = 0
-
-        for i in range(len(arr)):
-            if arr[i] <= c:
-                if s==0:
-                    s=1
-                current_group.append(arr[i])
-            if s==1 and arr[i]>c:
-                res_dur.append(len(current_group))
-                current_group.clear()
-                s=0
-
-        if len(current_group)!=0:
-            res_dur.append(len(current_group))
-
-        res_dur = np.array(res_dur)
-        filtered_values = res_dur[res_dur > 10000]
-        return filtered_values
-
     def upload_file_to_azure(self, file_path: str):
         """
         Azure Blob Storage에 파일을 업로드합니다.
@@ -147,15 +118,12 @@ class AudioProcessor:
         y_a = np.array(tmp)
 
         # Calculate criteria values
-        medc = self._critria_med(y_a)
         meanc = self._critria_mean(y_a)
-        dur_mean = self._all_duration(y_a, medc)  #0.05
-        # mind_meanc = np.max(dur_mean)
-        
+      
         # 업로드된 파일들의 Azure Blob URL을 저장할 리스트
         blob_urls = []
 
-        segment_paths, segment_lengths = self._split_and_save(meanc, 16000)
+        segment_paths, segment_lengths = self._split_and_save(meanc, 5000)
         
         # 분할된 파일들을 Azure Blob Storage에 업로드하고 Blob 경로를 반환합니다.
         for segment_path in segment_paths:
