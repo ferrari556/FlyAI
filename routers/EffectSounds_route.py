@@ -47,8 +47,7 @@ async def finalize_audio(audio_id: int, db: AsyncSession = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# 유저에게 실시간으로 효과음 합성된 오디오 파일 들려주기
-@router.websocket("/ws-interaction")
+@router.websocket("/ws-play")
 async def websocket_endpoint(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
     await websocket.accept()
     try:
@@ -60,10 +59,13 @@ async def websocket_endpoint(websocket: WebSocket, db: AsyncSession = Depends(ge
             result_id = data_dict.get("result_id")
             effect_sound_id = data_dict.get("effect_sound_id")
             
-            # 오디오 파일에 효과음 적용 로직을 구현
-            combined_audio_path = await combine_audio_files_with_effects(db, result_id, effect_sound_id)
+            # 여기서는 오디오 데이터를 바이트로 반환하도록 함수 수정 필요
+            audio_data_bytes = await combine_audio_files_with_effects(db, result_id, effect_sound_id)
             
-            # 클라이언트에게 결과 오디오 파일의 URL을 전송
-            await websocket.send_text(combined_audio_path)
+            # 클라이언트에게 바이트 형태의 오디오 데이터를 전송
+            if audio_data_bytes:
+                await websocket.send_bytes(audio_data_bytes)
+            else:
+                await websocket.send_text("Error: Unable to process audio")
     except WebSocketDisconnect:
         print("Client disconnected")

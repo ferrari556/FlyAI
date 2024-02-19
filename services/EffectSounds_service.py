@@ -7,9 +7,11 @@ from models.Results import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from pydub import AudioSegment
-import pytz, httpx, tempfile, contextlib, wave, os, shutil, uuid
+from fastapi import WebSocket
+import pytz, httpx, tempfile, contextlib, wave, os, uuid, shutil, io
 from datetime import datetime
 
+temp_file_paths = []  # 전역 변수로 임시 파일 경로 리스트 선언
 korea_time_zone = pytz.timezone("Asia/Seoul")
 created_at_kst = datetime.now(korea_time_zone)
 
@@ -72,20 +74,30 @@ async def upload_effect_sound_to_azure(file_name: str, file_path: str, db: Async
     
     return effect_sound
 
-# 효과음 임시 파일 다운로드
 async def download_file(url):
     async with httpx.AsyncClient() as client:
         resp = await client.get(url)
         resp.raise_for_status()
-        # 임시 파일 대신 파일 경로를 직접 생성하고 관리
+
         tmp_dir = "./tmp"
         if not os.path.exists(tmp_dir):
             os.makedirs(tmp_dir)
+
         tmp_file_path = os.path.join(tmp_dir, "tempfile_" + uuid.uuid4().hex)
         with open(tmp_file_path, "wb") as tmp_file:
             tmp_file.write(resp.content)
+        
+        temp_file_paths.append(tmp_file_path)  # 파일 경로를 전역 리스트에 추가
         return tmp_file_path
 
+async def delete_temp_files(file_paths):
+    for file_path in file_paths:
+        try:
+            os.remove(file_path)
+            print(f"Deleted temp file: {file_path}")
+        except OSError as e:
+            print(f"Error deleting file {file_path}: {e}")
+            
 # 오디오 분할 파일 + 효과음 파일 합쳐서 저장
 async def combine_final_audio_files(db: AsyncSession, audio_id: int):
 
@@ -112,12 +124,14 @@ async def combine_final_audio_files(db: AsyncSession, audio_id: int):
         if effect_history and effect_history.Edit_Action == "Apply Effect":
             effect_sound = await db.get(EffectSounds, effect_history.effect_sound_id)
             effect_segment = AudioSegment.from_file(await download_file(effect_sound.EffectFilePath))
+            
+            # 1.OverLay method
             # audio_segment = audio_segment.overlay(effect_segment)
+            # 2.Add method
             audio_segment = effect_segment + audio_segment
             
         combined_audio += audio_segment
 
-        
     # 합쳐진 오디오 파일을 임시 파일로 저장하고 경로 반환
     final_directory = f"./tmp"
     final_audio_path = f"./tmp/final_audio_{audio_id}.wav"
@@ -139,9 +153,11 @@ async def combine_final_audio_files(db: AsyncSession, audio_id: int):
         blob_client.upload_blob(data, overwrite=True)
     blob_url = blob_client.url
     
-    # 업로드가 완료된 후 로컬의 임시 파일과 디렉토리 삭제
-    # os.remove(final_audio_path)  # 임시 파일 삭제
-    shutil.rmtree(final_directory, ignore_errors=True)
+    # 모든 작업이 끝난 후 임시 파일 삭제
+    await delete_temp_files(temp_file_paths)
+    
+    # # 업로드가 완료된 후 로컬의 임시 파일과 디렉토리 삭제
+    # shutil.rmtree(final_directory, ignore_errors=True)
      
     return blob_url
 
@@ -150,17 +166,46 @@ async def combine_audio_files_with_effects(db: AsyncSession, result_id: int, eff
     audio_file = await db.get(Result, result_id)
     if not audio_file:
         return "오디오 파일을 찾을 수 없습니다."
-    
     current_audio_segment = AudioSegment.from_file(audio_file.ResultFilePath)
+    
     effect_sound = await db.get(EffectSounds, effect_sound_id)
     if not effect_sound:
         return "효과음을 찾을 수 없습니다."
-    
     effect_segment = AudioSegment.from_file(effect_sound.EffectFilePath)
+    
+    # 1.OverLay method
     # combined_audio = current_audio_segment.overlay(effect_segment)
+    # 2.Add method
     combined_audio = effect_segment + combined_audio
+    
     # 합쳐진 오디오 파일 저장
+    final_directory = f"./tmp"
     combined_audio_path = f'./tmp/combined_audio_{result_id}_{effect_sound_id}.wav'
     combined_audio.export(combined_audio_path, format='wav')
     
+    # 업로드가 완료된 후 로컬의 임시 파일과 디렉토리 삭제
+    shutil.rmtree(final_directory, ignore_errors=True)
+    
     return combined_audio_path
+
+async def combine_audio_files_with_effects(db: AsyncSession, result_id: int, effect_sound_id: int = None) -> bytes:
+    audio_file = await db.get(Result, result_id)
+    if not audio_file:
+        return None  # 적절한 오류 처리 필요
+
+    current_audio_segment = AudioSegment.from_file(audio_file.ResultFilePath)
+
+    if effect_sound_id is not None:
+        effect_sound = await db.get(EffectSounds, effect_sound_id)
+        if not effect_sound:
+            return None  # 적절한 오류 처리 필요
+        effect_segment = AudioSegment.from_file(effect_sound.EffectFilePath)
+        combined_audio = effect_segment + current_audio_segment
+    else:
+        combined_audio = current_audio_segment
+
+    with io.BytesIO() as audio_buffer:
+        combined_audio.export(audio_buffer, format="wav")
+        audio_data = audio_buffer.getvalue()
+
+    return audio_data
