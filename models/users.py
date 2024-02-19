@@ -13,12 +13,15 @@ class User(Base):
 
     # Relationship
     audiofile = relationship("AudioFile", back_populates="user")
+    finalaudiobooks = relationship("FinalAudioBooks", back_populates="user")
     
 class UserLogin(BaseModel):
+    user_id: int
     login_id: str
     login_pw: str
     
 class Usercreate(BaseModel):
+    user_id: int
     login_id: str
     login_pw: str
     

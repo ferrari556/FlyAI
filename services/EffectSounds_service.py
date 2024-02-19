@@ -7,7 +7,6 @@ from models.Results import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from pydub import AudioSegment
-from fastapi import WebSocket
 import pytz, httpx, tempfile, contextlib, wave, os, uuid, shutil, io
 from datetime import datetime
 
@@ -133,10 +132,13 @@ async def combine_final_audio_files(db: AsyncSession, audio_id: int):
         combined_audio += audio_segment
 
     # 합쳐진 오디오 파일을 임시 파일로 저장하고 경로 반환
-    final_directory = f"./tmp"
-    final_audio_path = f"./tmp/final_audio_{audio_id}.wav"
+    final_directory = "./tmp"
+    final_audio_filename = f"final_audio_{audio_id}.wav"
+    final_audio_path = os.path.join(final_directory, final_audio_filename)
     combined_audio.export(final_audio_path, format='wav')
 
+    final_length = get_wav_length(final_audio_path)
+    
     container_name = "final-audio-book"
     blob_service_client = BlobServiceClient.from_connection_string(connect_str)
 
@@ -153,13 +155,10 @@ async def combine_final_audio_files(db: AsyncSession, audio_id: int):
         blob_client.upload_blob(data, overwrite=True)
     blob_url = blob_client.url
     
-    # 모든 작업이 끝난 후 임시 파일 삭제
-    await delete_temp_files(temp_file_paths)
-    
     # # 업로드가 완료된 후 로컬의 임시 파일과 디렉토리 삭제
-    # shutil.rmtree(final_directory, ignore_errors=True)
+    shutil.rmtree(final_directory, ignore_errors=True)
      
-    return blob_url
+    return blob_url, final_audio_filename, final_length
 
 async def combine_audio_files_with_effects(db: AsyncSession, result_id: int, effect_sound_id: int):
     # 데이터베이스에서 오디오 파일 정보 가져오기
@@ -176,7 +175,7 @@ async def combine_audio_files_with_effects(db: AsyncSession, result_id: int, eff
     # 1.OverLay method
     # combined_audio = current_audio_segment.overlay(effect_segment)
     # 2.Add method
-    combined_audio = effect_segment + combined_audio
+    combined_audio = effect_segment + current_audio_segment
     
     # 합쳐진 오디오 파일 저장
     final_directory = f"./tmp"

@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends, UploadFile, File, WebSocket, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, WebSocket, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.websockets import WebSocketDisconnect
 from datetime import datetime
+from models.FinalAudioBooks import FinalAudioBooks
 import pytz, os, shutil, json
 from config.database import get_db
+from services.Login_Service import get_current_user_authorization, oauth2_scheme
+from services.AudioFiles_service import get_user_id_by_login_id
 from services.EffectSounds_service import (
     upload_effect_sound_to_azure,
     combine_audio_files_with_effects,
@@ -41,10 +44,29 @@ async def upload_effect_sound(file: UploadFile = File(...), db: AsyncSession = D
 
 # 효과음 + 오디오 분할 파일 합체
 @router.post("/finalize/{audio_id}")
-async def finalize_audio(audio_id: int, db: AsyncSession = Depends(get_db)):
+async def finalize_audio(request: Request, audio_id: int, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     try:
-        combined_audio_path = await combine_final_audio_files(db, audio_id)
-        return {"message": "Audio combined successfully", "audio_path": combined_audio_path}
+        login_id = await get_current_user_authorization(request, token)
+        user_id = await get_user_id_by_login_id(db, login_id)
+        if user_id is None:
+            raise HTTPException(status_code=404, detail="User not found")
+    
+        # 최종 오디오 파일 생성 및 Blob Storage URL 반환
+        blob_url, final_audio_filename, final_length = await combine_final_audio_files(db, audio_id)
+        
+        # FinalAudioBook 인스턴스 생성 및 데이터베이스에 저장
+        final_audio_book = FinalAudioBooks(
+            user_id=user_id,  # 예시 user_id, 실제 사용자 ID로 대체 필요
+            audio_id=audio_id,
+            Final_File_Name=final_audio_filename,
+            FinalFilePath=blob_url,
+            Final_File_Length=final_length,
+            Creation_Date=created_at_kst
+        )
+        
+        db.add(final_audio_book)
+        await db.commit()
+        return {"message": "Audio combined successfully", "audio_path": blob_url}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

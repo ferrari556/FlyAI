@@ -18,7 +18,8 @@ class AudioFile(Base):
     # Relationship
     user = relationship("User", back_populates="audiofile")
     result = relationship("Result", back_populates="audiofile")
-
+    finalaudiobooks = relationship("FinalAudioBooks", back_populates="original_audio")
+    
 class AudioResponse(BaseModel):
     audio_id : int
     File_Name : str

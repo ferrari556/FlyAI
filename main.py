@@ -7,7 +7,8 @@ from models.AudioFiles import Base as AudioFiles
 from models.EditHistory import Base as EditHistory 
 from models.Results import Base as Result  
 from models.users import Base as users  
-from models.EffectSounds import Base as EffectSound  
+from models.EffectSounds import Base as EffectSound
+from models.FinalAudioBooks import Base as FinalAudioBook    
 from routers import (
     AudioFiles_route,
     EditHistory_route,
@@ -25,11 +26,13 @@ app = FastAPI()
 setup_cors(app)
 
 # 원하는 데이터베이스 생성
+FinalAudioBook.metadata.create_all(bind=engine)
 AudioFiles.metadata.create_all(bind=engine)
 EffectSound.metadata.create_all(bind=engine)
 EditHistory.metadata.create_all(bind=engine)
 Result.metadata.create_all(bind=engine)
 users.metadata.create_all(bind=engine)
+
 
 # Prefix는 엔드포인트를 정할 때 사용
 app.include_router(users_route.router, prefix="/users", tags=["Users"])
