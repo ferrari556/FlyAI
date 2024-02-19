@@ -209,3 +209,41 @@ async def combine_audio_files_with_effects(db: AsyncSession, result_id: int, eff
         audio_data = audio_buffer.getvalue()
 
     return audio_data
+
+# 전체 오디오 파일에 분할 파일과 효과음 적용
+async def combine_whole_audio_with_effects(db: AsyncSession, audio_id: int) -> bytes:
+    # 전체 오디오 파일 대상으로 분할 파일과 효과음 적용 로직 구현
+    combined_audio = AudioSegment.empty()
+
+    # 모든 분할 파일 가져오기
+    result_files = await db.execute(
+        select(Result).filter(Result.audio_id == audio_id).order_by(Result.Index)
+    )
+    result_files = result_files.scalars().all()
+
+    # 각 분할 파일에 대해 최신 효과음 적용 상태 확인
+    for result_file in result_files:
+        audio_segment = AudioSegment.from_file(result_file.ResultFilePath)
+
+        # 해당 분할 파일에 적용된 최신 효과음 가져오기
+        effect_history = await db.execute(
+            select(EditHistory)
+            .filter(EditHistory.result_id == result_file.result_id)
+            .order_by(EditHistory.edit_date.desc())
+        )
+        effect_history = effect_history.scalars().first()
+
+        # 최신 효과음이 적용된 경우, 해당 효과음 적용
+        if effect_history and effect_history.edit_action == "Apply Effect":
+            effect_sound = await db.get(EffectSounds, effect_history.effect_sound_id)
+            if effect_sound:
+                effect_segment = AudioSegment.from_file(effect_sound.EffectFilePath)
+                audio_segment = audio_segment.overlay(effect_segment)
+
+        combined_audio += audio_segment
+
+    with io.BytesIO() as audio_buffer:
+        combined_audio.export(audio_buffer, format="wav")
+        audio_data = audio_buffer.getvalue()
+
+    return audio_data

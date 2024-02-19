@@ -7,7 +7,8 @@ from config.database import get_db
 from services.EffectSounds_service import (
     upload_effect_sound_to_azure,
     combine_audio_files_with_effects,
-    combine_final_audio_files
+    combine_final_audio_files,
+    combine_whole_audio_with_effects
 )
 
 router = APIRouter()
@@ -52,17 +53,33 @@ async def websocket_endpoint(websocket: WebSocket, db: AsyncSession = Depends(ge
     await websocket.accept()
     try:
         while True:
-            # 클라이언트로부터 메시지를 기다립니다.
             data = await websocket.receive_text()
-            # 데이터를 JSON으로 변환합니다.
             data_dict = json.loads(data)
+
             result_id = data_dict.get("result_id")
-            effect_sound_id = data_dict.get("effect_sound_id")
-            
-            # 여기서는 오디오 데이터를 바이트로 반환하도록 함수 수정 필요
+            effect_sound_id = data_dict.get("effect_sound_id", None)  # 효과음 적용 여부
+
+            # 오디오 데이터 바이트를 받아오는 로직
             audio_data_bytes = await combine_audio_files_with_effects(db, result_id, effect_sound_id)
             
-            # 클라이언트에게 바이트 형태의 오디오 데이터를 전송
+            if audio_data_bytes:
+                await websocket.send_bytes(audio_data_bytes)
+            else:
+                await websocket.send_text("Error: Unable to process audio")
+    except WebSocketDisconnect:
+        print("Client disconnected")
+        
+@router.websocket("/ws-whole-play")
+async def websocket_whole_audio_endpoint(websocket: WebSocket, db: AsyncSession = Depends(get_db)):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_text()
+            data_dict = json.loads(data)
+
+            audio_id = data_dict.get("audio_id")
+            audio_data_bytes = await combine_whole_audio_with_effects(db, audio_id)
+            
             if audio_data_bytes:
                 await websocket.send_bytes(audio_data_bytes)
             else:
