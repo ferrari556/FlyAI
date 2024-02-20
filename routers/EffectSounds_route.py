@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, UploadFile, File, WebSocket, HTTPException, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.websockets import WebSocketDisconnect
 from datetime import datetime
@@ -39,8 +40,18 @@ async def upload_effect_sound(file: UploadFile = File(...), db: AsyncSession = D
     # 모든 처리가 완료된 후 디렉토리 삭제
     if os.path.exists(tmp_directory):
         shutil.rmtree(tmp_directory)
-
-    return {"filename": effect_sound.Effect_Name, "url": effect_sound.EffectFilePath}
+        
+    effects_data = {
+        "effect_sound_id": effect_sound.effect_sound_id,
+        "result_id": effect_sound.result_id,
+        "Effect_Name": effect_sound.Effect_Name,
+        "EffectFilePath": effect_sound.EffectFilePath,
+        "EffectFileLength": effect_sound.EffectFileLength,
+        "Upload_Date": effect_sound.Upload_Date.isoformat(),  # datetime 객체 ISO 포맷으로 변환
+    }
+    
+    # 생성된 effectss_data로 JSONResponse 객체를 생성합니다.
+    return JSONResponse(status_code=200, content={"effects": effects_data})
 
 # 효과음 + 오디오 분할 파일 합체
 @router.post("/finalize/{audio_id}")

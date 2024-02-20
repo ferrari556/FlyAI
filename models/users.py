@@ -16,16 +16,15 @@ class User(Base):
     finalaudiobooks = relationship("FinalAudioBooks", back_populates="user")
     
 class UserLogin(BaseModel):
-    user_id: int
     login_id: str
     login_pw: str
     
 class Usercreate(BaseModel):
-    user_id: int
     login_id: str
     login_pw: str
     
 class UserResponse(BaseModel):
+    user_id: int
     login_id: str
     created_at: datetime
 
