@@ -19,7 +19,7 @@ def get_wav_length(wav_path):
     with contextlib.closing(wave.open(wav_path, 'r')) as f:
         frames = f.getnframes()
         rate = f.getframerate()
-        duration = frames / float(rate)
+        duration = round(frames / float(rate), 2)
         return duration
     
 # 파일 이름과 사용자 ID로 오디오 파일 검색
@@ -54,10 +54,10 @@ async def split_and_save_results(db : AsyncSession, audio_id: int, segments_info
 # Azure Blob Storage로 분할 파일과 원본 파일 업로드
 async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: int, db: AsyncSession):
     
-    # 파일 이름으로 기존 오디오 파일 존재 여부 확인
-    existing_audiofile = await get_audiofile_by_name(db, user_id, File_Name)
-    if existing_audiofile:
-        raise ValueError("File Name Already Used")
+    # # 파일 이름으로 기존 오디오 파일 존재 여부 확인
+    # existing_audiofile = await get_audiofile_by_name(db, user_id, File_Name)
+    # if existing_audiofile:
+    #     raise ValueError("File Name Already Used")
 
     # tmp 루트 폴더 경로
     temp_file_path2 = f"./tmp"

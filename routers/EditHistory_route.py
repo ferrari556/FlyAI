@@ -12,10 +12,6 @@ from services.EditHistory_service import (
     cancel_effect
 )
 
-# 한국 시간대(KST, UTC+9)를 사용하여 'created_at'을 설정합니다.
-korea_time_zone = pytz.timezone("Asia/Seoul")
-created_at_kst = datetime.now(korea_time_zone)
-    
 router = APIRouter()
 
 @router.get("/read/{history_id}", response_model = HistoryResponse)

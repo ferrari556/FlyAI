@@ -4,6 +4,7 @@ from models.EffectSounds import EffectSounds
 from models.EditHistory import EditHistory
 from models.EffectSounds import EffectSounds
 from models.Results import Result
+from models.AudioFiles import AudioFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from pydub import AudioSegment
@@ -28,7 +29,7 @@ def get_wav_length(wav_path: str) -> float:
     with contextlib.closing(wave.open(wav_path, 'r')) as f:
         frames = f.getnframes()
         rate = f.getframerate()
-        duration = frames / float(rate)
+        duration = round(frames / float(rate), 2)
     return duration
     
 async def upload_effect_sound_to_azure(file_name: str, file_path: str, db: AsyncSession):
@@ -104,7 +105,11 @@ async def combine_final_audio_files(db: AsyncSession, audio_id: int):
         select(Result).filter(Result.audio_id == audio_id).order_by(Result.Index)
     )
     result_files = result_files.scalars().all()
-
+    
+    # 결과 파일이 없는 경우 에러 메시지 출력
+    if not result_files:
+        raise ValueError(f"No Audio File Founded")
+    
     combined_audio = AudioSegment.empty()
 
     for result_file in result_files:
@@ -132,8 +137,10 @@ async def combine_final_audio_files(db: AsyncSession, audio_id: int):
         combined_audio += audio_segment
 
     # 합쳐진 오디오 파일을 임시 파일로 저장하고 경로 반환
+    audio_file = await db.get(AudioFile, audio_id)
+    final_audio_filename = "Edited-" + str(audio_file.File_Name)
     final_directory = "./tmp"
-    final_audio_filename = f"final_audio_{audio_id}.wav"
+    # final_audio_filename = f"final_audio_{audio_id}.wav"
     final_audio_path = os.path.join(final_directory, final_audio_filename)
     combined_audio.export(final_audio_path, format='wav')
 

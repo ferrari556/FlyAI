@@ -8,7 +8,7 @@ def get_wav_length(wav_path):
     with contextlib.closing(wave.open(wav_path, 'r')) as f:
         frames = f.getnframes()
         rate = f.getframerate()
-        duration = frames / float(rate)
+        duration = round(frames / float(rate), 2)
         return duration
     
 # 오디오 파일 전처리
