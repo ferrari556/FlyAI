@@ -14,11 +14,36 @@ from services.EffectSounds_service import (
     combine_final_audio_files,
     combine_whole_audio_with_effects
 )
+from models.EffectSounds import EffectSounds
+from sqlalchemy.future import select
 
 router = APIRouter()
 
 korea_time_zone = pytz.timezone("Asia/Seoul")
 created_at_kst = datetime.now(korea_time_zone)
+
+@router.get("/read")
+async def get_all_effect_sounds(db: AsyncSession = Depends(get_db)):
+    async with db as session:
+        query = select(EffectSounds)  # EffectSounds 모델의 모든 데이터를 조회하는 쿼리
+        result = await session.execute(query)
+        effect_sounds = result.scalars().all()
+
+        # 조회된 데이터를 JSON 형식으로 변환
+        effects_data = [
+            {
+                "effect_sound_id": effect_sound.effect_sound_id,
+                "result_id": effect_sound.result_id,
+                "Effect_Name": effect_sound.Effect_Name,
+                "EffectFilePath": effect_sound.EffectFilePath,
+                "EffectFileLength": effect_sound.EffectFileLength,
+                "Upload_Date": effect_sound.Upload_Date.isoformat(),
+            }
+            for effect_sound in effect_sounds
+        ]
+
+        # 변환된 데이터를 JSONResponse 객체로 반환
+        return JSONResponse(status_code=200, content={"effects": effects_data})
 
 # 효과음 업로드
 @router.post("/upload")
@@ -93,12 +118,16 @@ async def websocket_endpoint(websocket: WebSocket, db: AsyncSession = Depends(ge
             effect_sound_id = data_dict.get("effect_sound_id", None)  # 효과음 적용 여부
 
             # 오디오 데이터 바이트를 받아오는 로직
-            audio_data_bytes = await combine_audio_files_with_effects(db, result_id, effect_sound_id)
+            audio_data_bytes, final_directory = await combine_audio_files_with_effects(db, result_id, effect_sound_id)
             
             if audio_data_bytes:
                 await websocket.send_bytes(audio_data_bytes)
             else:
                 await websocket.send_text("Error: Unable to process audio")
+                
+            # # 업로드가 완료된 후 로컬의 임시 파일과 디렉토리 삭제
+            shutil.rmtree(final_directory, ignore_errors=True)
+    
     except WebSocketDisconnect:
         print("Client disconnected")
         

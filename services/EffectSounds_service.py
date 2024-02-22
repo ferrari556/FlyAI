@@ -189,10 +189,7 @@ async def combine_audio_files_with_effects(db: AsyncSession, result_id: int, eff
     combined_audio_path = f'./tmp/combined_audio_{result_id}_{effect_sound_id}.wav'
     combined_audio.export(combined_audio_path, format='wav')
     
-    # 업로드가 완료된 후 로컬의 임시 파일과 디렉토리 삭제
-    shutil.rmtree(final_directory, ignore_errors=True)
-    
-    return combined_audio_path
+    return combined_audio_path, final_directory
 
 async def combine_audio_files_with_effects(db: AsyncSession, result_id: int, effect_sound_id: int = None) -> bytes:
     audio_file = await db.get(Result, result_id)
