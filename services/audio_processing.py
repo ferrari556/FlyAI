@@ -66,7 +66,7 @@ class AudioProcessor:
 
         # wav 파일 로드합니다.
         y, sr = librosa.load(self.wav_path, sr=16000)
-
+        audio_total_len=len(y)
         gap = []
         for i in range(1, len(y)):
             a = abs(y[i-1]-y[i])
@@ -87,7 +87,7 @@ class AudioProcessor:
             segment_paths.append(segment_path)  # Add the path to the list
             segment_lengths.append(segment_length)
         
-        return segment_paths, segment_lengths  # Return the list of paths
+        return audio_total_len, segment_paths, segment_lengths  # Return the list of paths
         
     def _critria_mean(self, y):
         filtered_values = y[y <= 0.01]

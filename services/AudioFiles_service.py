@@ -36,8 +36,12 @@ async def split_and_save_results(db : AsyncSession, audio_id: int, segments_info
     
     for index, (segment_path, segment_length) in enumerate(zip(segments_info, segment_lengths)):
         # 여기에서 segment_length 값을 Result 객체에 저장
+        # 파일 이름만 추출
+        file_name = os.path.basename(segment_path)
+        
         result = Result(
             audio_id=audio_id,
+            File_Name=file_name,  # 여기에 파일 이름 추가
             Index=index + 1,
             Converted_Result="X",
             ResultFilePath=segment_path,
@@ -110,15 +114,15 @@ async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: i
         await db.refresh(audio_file)
         
         # 오디오 루트 파일 경로
-        output_dir2 = f"./processed_audio"
+        output_dir2 = f"data/split_audio_files/"
         
         # 오디오 파일 처리
-        output_dir = f"./processed_audio/user{user_id}"
+        output_dir = f"data/split_audio_files/"
         
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        container_name = f"processed-audio{user_id}"
+        container_name = f"split-audio{user_id}"
         
         # 컨테이너 생성 및 공개 접근 수준 설정 (Container 또는 Blob)
         try:
@@ -127,7 +131,7 @@ async def uploadtoazure(File_Name: str, content_type: str, file_data, user_id: i
             pass
         
         processor = AudioProcessor(audio_file.audio_id, temp_file_path, output_dir, blob_service_client, container_name)
-        segments_info, segment_lengths = processor.process_audio()
+        audio_total_len, segments_info, segment_lengths = processor.process_audio()
         results = await split_and_save_results(db, audio_file.audio_id, segments_info, segment_lengths)
               
     except Exception as e:

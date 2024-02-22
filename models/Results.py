@@ -8,6 +8,7 @@ class Result(Base):
     __tablename__ = 'result'
     result_id = Column(Integer, primary_key=True)
     audio_id = Column(Integer, ForeignKey('audiofile.audio_id'))
+    File_Name = Column(String(255), nullable=False)
     Index = Column(Integer, nullable=False)
     Converted_Result = Column(String(255), nullable=False)
     ResultFilePath = Column(String(255), nullable=False)
