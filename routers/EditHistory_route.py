@@ -7,7 +7,6 @@ import pytz
 from datetime import datetime
 from services.EditHistory_service import (
     get_edithistory_by_id, 
-    delete_edithistory, 
     apply_effect, 
     cancel_effect
 )
@@ -20,11 +19,6 @@ async def get_history_by_id(history_id: int, db: AsyncSession = Depends(get_db))
     if history is None:
         raise HTTPException(status_code=404, detail="EditHistory not found")
     return history
-
-@router.delete("/delete/{history_id}")
-async def delete_history(history_id: int, db: AsyncSession = Depends(get_db)):
-    await delete_edithistory(db, history_id)
-    return {"message": "EditHistory deleted"}
 
 @router.post("/apply")
 async def apply_history_effect(request : EditEffect, db: AsyncSession = Depends(get_db)): 

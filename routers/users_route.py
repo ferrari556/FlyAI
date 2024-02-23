@@ -1,13 +1,10 @@
 from models.users import User, Usercreate, UserResponse, UserLogin
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from config.database import get_db
 from fastapi.security import OAuth2PasswordRequestForm
 from services.Login_Service import (
-    oauth2_scheme, 
-    get_current_user_authorization, 
-    get_user_by_login_id,
     create_user,
     authenticate_user,
     create_access_token,
@@ -16,30 +13,6 @@ from services.Login_Service import (
 )
 
 router = APIRouter()
-
-# 유저 토큰값 조회 API
-@router.get("/auth")
-async def read_user_me(request: Request, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
-    # 토큰을 사용하여 사용자 인증을 수행합니다.
-    login_id = await get_current_user_authorization(request, token)
-    user = await get_user_by_login_id(db, login_id)
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    return user
-
-# ID로 사용자 읽기
-@router.get("/read/{user_id}")
-async def get_user_by_id(user_id: int, db: AsyncSession = Depends(get_db)):
-    try:
-        user = await db.get(User, user_id)
-        if user is None:
-            raise HTTPException(status_code=404, detail="User not found")
-        return user
-    except HTTPException as http_exc:
-        raise http_exc
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
 
 # 사용자 생성 API
 @router.post("/signup", response_model = UserResponse)
@@ -65,6 +38,20 @@ async def login(user: UserLogin, db: AsyncSession = Depends(get_db)):
             "refresh_token": refresh_token, 
             "token_type": "bearer"
             }
+
+# ID로 사용자 읽기
+@router.get("/read/{user_id}")
+async def get_user_by_id(user_id: int, db: AsyncSession = Depends(get_db)):
+    try:
+        user = await db.get(User, user_id)
+        if user is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        return user
+    except HTTPException as http_exc:
+        raise http_exc
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": "Internal Server Error", "detail": str(e)})
+
 
 # FastAPI 내에서 테스트를 하기 위한 API
 @router.post("/test")

@@ -81,7 +81,8 @@ class AudioProcessor:
         for i in range(len(idx)-1):
             start_sample = idx[i]
             end_sample = idx[i+1]
-            segment_path = f"{self.output_dir}/{self.id}_{i+1}.wav"  # Define the path for this segment
+            # segment_path = f"{self.output_dir}/{self.id}_{i+1}.wav"  # Define the path for this segment
+            segment_path = f"{self.output_dir}/5_{i+1}.wav"  # Define the path for this segment
             sf.write(segment_path, y[start_sample:end_sample], sr)  # Save the segment
             segment_length = get_wav_length(segment_path)
             segment_paths.append(segment_path)  # Add the path to the list
@@ -123,12 +124,12 @@ class AudioProcessor:
         # 업로드된 파일들의 Azure Blob URL을 저장할 리스트
         blob_urls = []
 
-        segment_paths, segment_lengths = self._split_and_save(meanc, 5000)
+        audio_total_len, segment_paths, segment_lengths = self._split_and_save(meanc, 5000)
         
         # 분할된 파일들을 Azure Blob Storage에 업로드하고 Blob 경로를 반환합니다.
         for segment_path in segment_paths:
             blob_url = self.upload_file_to_azure(segment_path)
             blob_urls.append(blob_url)  # URL을 리스트에 추가
 
-        return blob_urls, segment_lengths  # URL 리스트 반환
+        return audio_total_len, blob_urls, segment_lengths  # URL 리스트 반환
      

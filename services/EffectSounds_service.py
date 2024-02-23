@@ -31,48 +31,6 @@ def get_wav_length(wav_path: str) -> float:
         rate = f.getframerate()
         duration = round(frames / float(rate), 2)
     return duration
-    
-async def upload_effect_sound_to_azure(file_name: str, file_path: str, db: AsyncSession):
-    
-    # 파일을 WAV 형식으로 변환
-    converted_file_path = convert_to_wav(file_path)
-    
-    container_name = "effects"
-    blob_service_client = BlobServiceClient.from_connection_string(connect_str)
-
-    # 컨테이너가 없으면 생성
-    container_client = blob_service_client.get_container_client(container_name)
-    try:
-        container_client.create_container(public_access=PublicAccess.Container)
-    except ResourceExistsError:
-        pass  # 컨테이너가 이미 존재하면 무시
-        
-    # 파일 업로드
-    blob_client = container_client.get_blob_client(blob=file_name)
-    with open(converted_file_path, "rb") as data:
-        blob_client.upload_blob(data, overwrite=True)
-    blob_url = blob_client.url
-
-    # 변환된 WAV 파일의 길이 정보 계산
-    wav_length = get_wav_length(converted_file_path)
-
-    # 파일 메타데이터와 wav 길이를 데이터베이스에 저장
-    effect_sound = EffectSounds(
-        result_id=1,  # result_id 설정이 필요하다면 적절한 값으로 변경
-        Effect_Name=file_name,
-        EffectFilePath=blob_url,
-        EffectFileLength=wav_length,  # wav 파일 길이 정보 추가
-        Upload_Date=created_at_kst
-    )
-    
-    db.add(effect_sound)
-    await db.commit()
-    await db.refresh(effect_sound)
-
-    # 임시 변환 파일 삭제
-    os.remove(converted_file_path)
-    
-    return effect_sound
 
 async def download_file(url):
     async with httpx.AsyncClient() as client:

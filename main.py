@@ -8,7 +8,8 @@ from models.EditHistory import Base as EditHistory
 from models.Results import Base as Result  
 from models.users import Base as users  
 from models.EffectSounds import Base as EffectSound
-from models.FinalAudioBooks import Base as FinalAudioBook    
+from models.FinalAudioBooks import Base as FinalAudioBook
+from models.BackGrounds import Base as BackGround       
 from routers import (
     AudioFiles_route,
     EditHistory_route,
@@ -32,7 +33,7 @@ EffectSound.metadata.create_all(bind=engine)
 EditHistory.metadata.create_all(bind=engine)
 Result.metadata.create_all(bind=engine)
 users.metadata.create_all(bind=engine)
-
+BackGround.metadata.create_all(bind=engine)
 
 # Prefix는 엔드포인트를 정할 때 사용
 app.include_router(users_route.router, prefix="/users", tags=["Users"])

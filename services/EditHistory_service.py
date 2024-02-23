@@ -16,15 +16,6 @@ async def get_edithistory_by_id(db: AsyncSession, history_id: int):
         raise HTTPException(status_code=404, detail="EditHistory not found")
     return history
 
-# 편집 기록 삭제
-async def delete_edithistory(db: AsyncSession, history_id: int):
-    existing_history = await db.get(EditHistory, history_id)
-    if existing_history is None:
-        raise HTTPException(status_code=404, detail="EditHistory not found")
-
-    await db.delete(existing_history)
-    await db.commit()
-
 # 효과음을 채택했을 때 실행되는 함수
 async def apply_effect(db: AsyncSession, request : EditEffect):
     result = await db.get(Result, request.result_id)

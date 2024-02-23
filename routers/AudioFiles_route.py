@@ -15,16 +15,6 @@ from services.AudioFiles_service import (
 
 router = APIRouter()
 
-# audio_id로 파일 읽기
-@router.get("/read/{audio_id}", response_model=AudioResponse)
-async def read_audiofile(audio_id: int, db: AsyncSession = Depends(get_db)):
-    return await get_audiofile_by_id(db, audio_id)
-
-# audio_id로 파일 삭제
-@router.delete("/delete/{audio_id}", response_model=AudioDelete)
-async def remove_audiofile(audio_id: int, db: AsyncSession = Depends(get_db)):
-    return await delete_audiofile(db, audio_id)
-
 @router.post("/upload")
 async def create_upload_file(request: Request, file: UploadFile, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     login_id = await get_current_user_authorization(request, token)
@@ -62,3 +52,14 @@ async def download_and_save_file(request: Request, File_Name: str, token: str = 
         return db_audio_file
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    
+# audio_id로 파일 읽기
+@router.get("/read/{audio_id}", response_model=AudioResponse)
+async def read_audiofile(audio_id: int, db: AsyncSession = Depends(get_db)):
+    return await get_audiofile_by_id(db, audio_id)
+
+# audio_id로 파일 삭제
+@router.delete("/delete/{audio_id}", response_model=AudioDelete)
+async def remove_audiofile(audio_id: int, db: AsyncSession = Depends(get_db)):
+    return await delete_audiofile(db, audio_id)
+
