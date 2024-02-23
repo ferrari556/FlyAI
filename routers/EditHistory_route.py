@@ -1,10 +1,7 @@
 from models.EditHistory import EditEffect, HistoryResponse, EditEffect
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import JSONResponse
 from config.database import get_db
-import pytz
-from datetime import datetime
 from services.EditHistory_service import (
     get_edithistory_by_id, 
     apply_effect, 
